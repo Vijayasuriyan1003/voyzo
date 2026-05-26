@@ -18,7 +18,7 @@ class VoyzoApp extends StatelessWidget {
       designSize: const Size(390, 844),
       minTextAdapt: true,
       splitScreenMode: true,
-      builder: (_, __) => MaterialApp.router(
+      builder: (_, _) => MaterialApp.router(
         title: 'Voyzo',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
