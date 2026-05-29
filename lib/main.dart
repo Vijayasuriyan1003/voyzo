@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:voyzo/routes/app_router.dart';
@@ -6,6 +7,13 @@ import 'package:voyzo/theme/app_theme.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+    ),
+  );
   runApp(const ProviderScope(child: VoyzoApp()));
 }
 
@@ -18,11 +26,12 @@ class VoyzoApp extends StatelessWidget {
       designSize: const Size(390, 844),
       minTextAdapt: true,
       splitScreenMode: true,
-      builder: (_, _) => MaterialApp.router(
+      builder: (context, child) => MaterialApp.router(
         title: 'Voyzo',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,
+        themeMode: ThemeMode.light,
         routerConfig: appRouter,
       ),
     );
