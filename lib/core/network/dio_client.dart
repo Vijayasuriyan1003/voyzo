@@ -1,19 +1,10 @@
 import 'package:dio/dio.dart';
-import 'package:voyzo/core/constants/app_constants.dart';
 
-Dio createDioClient() {
-  final dio = Dio(
+class DioClient {
+  static final Dio dio = Dio(
     BaseOptions(
-      baseUrl: AppConstants.baseUrl,
-      connectTimeout: AppConstants.connectionTimeout,
-      receiveTimeout: AppConstants.receiveTimeout,
+      baseUrl: 'https://6a21d5b9b1d0aaf32b500073.mockapi.io/api',
       headers: {'Content-Type': 'application/json'},
     ),
   );
-
-  dio.interceptors.addAll([
-    LogInterceptor(requestBody: true, responseBody: true),
-  ]);
-
-  return dio;
 }
