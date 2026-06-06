@@ -54,10 +54,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFFFFF8F5),
-                      Color(0xFFFDE8CC),
-                    ],
+                    colors: [Color(0xFFFFF8F5), Color(0xFFFDE8CC)],
                   ),
                 ),
                 child: Column(
@@ -142,8 +139,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         hint: 'Enter your email or phone',
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
-                        prefixIcon: const Icon(Icons.person_outline_rounded,
-                            color: AppColors.textHint),
+                        prefixIcon: const Icon(
+                          Icons.person_outline_rounded,
+                          color: AppColors.textHint,
+                        ),
                         validator: (v) =>
                             (v == null || v.isEmpty) ? 'Required' : null,
                       ),
@@ -154,15 +153,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         hint: 'Enter your password',
                         controller: _passwordController,
                         isPassword: true,
-                        prefixIcon: const Icon(Icons.lock_outline_rounded,
-                            color: AppColors.textHint),
+                        prefixIcon: const Icon(
+                          Icons.lock_outline_rounded,
+                          color: AppColors.textHint,
+                        ),
                         validator: (v) => (v == null || v.length < 4)
                             ? 'Min 4 characters'
                             : null,
                       ),
                       SizedBox(height: 12.h),
 
-                      // Remember me + Forgot
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -192,7 +192,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ],
                           ),
                           TextButton(
-                            onPressed: () {},
+                            onPressed: () {
+                              context.push('/forgot-password');
+                            },
                             child: Text(
                               'Forgot Password?',
                               style: TextStyle(

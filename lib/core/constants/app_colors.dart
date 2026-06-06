@@ -8,23 +8,23 @@ class AppColors {
   static const Color primaryLight = Color(0xFFFFB86E);
   static const Color onPrimary = Color(0xFFFFFFFF);
 
-  static const Color background = Color(0xFFFFF8F5);
+  static const Color background = Color(0xFFFFFFFF);
   static const Color surface = Color(0xFFFFFFFF);
   static const Color surfaceContainer = Color(0xFFFDEBDD);
   static const Color surfaceContainerHigh = Color(0xFFF7E5D7);
 
   static const Color textPrimary = Color(0xFF231A12);
-  static const Color textSecondary = Color(0xFF544434);
+  static const Color textSecondary = Color(0xFF9E9E9E);
   static const Color textHint = Color(0xFF877362);
 
-  static const Color outline = Color(0xFF877362);
-  static const Color outlineVariant = Color(0xFFDAC2AE);
+  static const Color outline = Color(0xFF231A12);
+  static const Color outlineVariant = Color(0xFF231A12);
   static const Color divider = Color(0xFFE8DDD5);
 
   static const Color error = Color(0xFFBA1A1A);
   static const Color errorContainer = Color(0xFFFFDAD6);
 
-  static const Color success = Color(0xFF2E7D32);
+  static const Color success = Color(0xFFFFB86E);
   static const Color successContainer = Color(0xFFE8F5E9);
   static const Color onSuccess = Color(0xFFFFFFFF);
 

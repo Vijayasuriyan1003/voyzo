@@ -17,18 +17,22 @@ class EditProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
-  final _nameController =
-      TextEditingController(text: MockData.driver['name']);
-  final _phoneController =
-      TextEditingController(text: MockData.driver['phone']);
-  final _emailController =
-      TextEditingController(text: MockData.driver['email']);
-  final _vehicleController =
-      TextEditingController(text: MockData.driver['vehicleModel']);
-  final _vehicleNoController =
-      TextEditingController(text: MockData.driver['vehicleNumber']);
-  final _licenseController =
-      TextEditingController(text: MockData.driver['licenseNumber']);
+  final _nameController = TextEditingController(text: MockData.driver['name']);
+  final _phoneController = TextEditingController(
+    text: MockData.driver['phone'],
+  );
+  final _emailController = TextEditingController(
+    text: MockData.driver['email'],
+  );
+  final _vehicleController = TextEditingController(
+    text: MockData.driver['vehicleModel'],
+  );
+  final _vehicleNoController = TextEditingController(
+    text: MockData.driver['vehicleNumber'],
+  );
+  final _licenseController = TextEditingController(
+    text: MockData.driver['licenseNumber'],
+  );
 
   bool _isSaving = false;
   int _selectedPhotoIndex = 0;
@@ -88,8 +92,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white, width: 2),
                         ),
-                        child: Icon(Icons.camera_alt_rounded,
-                            color: Colors.white, size: 14.sp),
+                        child: Icon(
+                          Icons.camera_alt_rounded,
+                          color: Colors.white,
+                          size: 14.sp,
+                        ),
                       ),
                     ],
                   ),
@@ -116,15 +123,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     children: [
                       _StatChip(
                         icon: Icons.star_rounded,
-                        label:
-                            '${MockData.driver['rating']} Rating',
+                        label: '${MockData.driver['rating']} Rating',
                         color: Colors.amber,
                       ),
                       SizedBox(width: 12.w),
                       _StatChip(
                         icon: Icons.directions_car_rounded,
-                        label:
-                            '${MockData.driver['totalTrips']} Trips',
+                        label: '${MockData.driver['totalTrips']} Trips',
                         color: AppColors.primary,
                       ),
                     ],
@@ -169,11 +174,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                             ),
                           ),
                           child: index == 7
-                              ? Icon(Icons.add_photo_alternate_rounded,
+                              ? Icon(
+                                  Icons.add_photo_alternate_rounded,
                                   color: isSelected
                                       ? Colors.white
                                       : AppColors.textHint,
-                                  size: 22.sp)
+                                  size: 22.sp,
+                                )
                               : Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
@@ -185,8 +192,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                       size: 24.sp,
                                     ),
                                     if (isSelected)
-                                      Icon(Icons.check_circle,
-                                          color: Colors.white, size: 12.sp),
+                                      Icon(
+                                        Icons.check_circle,
+                                        color: Colors.white,
+                                        size: 12.sp,
+                                      ),
                                   ],
                                 ),
                         ),
@@ -201,24 +211,30 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   AppTextField(
                     label: 'Full Name',
                     controller: _nameController,
-                    prefixIcon: const Icon(Icons.person_outline_rounded,
-                        color: AppColors.textHint),
+                    prefixIcon: const Icon(
+                      Icons.person_outline_rounded,
+                      color: AppColors.textHint,
+                    ),
                   ),
                   SizedBox(height: 14.h),
                   AppTextField(
                     label: 'Mobile Number',
                     controller: _phoneController,
                     keyboardType: TextInputType.phone,
-                    prefixIcon: const Icon(Icons.phone_outlined,
-                        color: AppColors.textHint),
+                    prefixIcon: const Icon(
+                      Icons.phone_outlined,
+                      color: AppColors.textHint,
+                    ),
                   ),
                   SizedBox(height: 14.h),
                   AppTextField(
                     label: 'Email Address',
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
-                    prefixIcon: const Icon(Icons.email_outlined,
-                        color: AppColors.textHint),
+                    prefixIcon: const Icon(
+                      Icons.email_outlined,
+                      color: AppColors.textHint,
+                    ),
                   ),
                   SizedBox(height: 24.h),
 
@@ -228,15 +244,19 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   AppTextField(
                     label: 'Vehicle Model',
                     controller: _vehicleController,
-                    prefixIcon: const Icon(Icons.directions_car_outlined,
-                        color: AppColors.textHint),
+                    prefixIcon: const Icon(
+                      Icons.directions_car_outlined,
+                      color: AppColors.textHint,
+                    ),
                   ),
                   SizedBox(height: 14.h),
                   AppTextField(
                     label: 'Vehicle Number',
                     controller: _vehicleNoController,
-                    prefixIcon: const Icon(Icons.badge_outlined,
-                        color: AppColors.textHint),
+                    prefixIcon: const Icon(
+                      Icons.badge_outlined,
+                      color: AppColors.textHint,
+                    ),
                   ),
                   SizedBox(height: 24.h),
 
@@ -246,8 +266,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   AppTextField(
                     label: 'License Number',
                     controller: _licenseController,
-                    prefixIcon: const Icon(Icons.article_outlined,
-                        color: AppColors.textHint),
+                    prefixIcon: const Icon(
+                      Icons.article_outlined,
+                      color: AppColors.textHint,
+                    ),
                   ),
                   SizedBox(height: 12.h),
 
@@ -261,13 +283,17 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         color: AppColors.surfaceContainer,
                         borderRadius: BorderRadius.circular(12.r),
                         border: Border.all(
-                            color: AppColors.outlineVariant,
-                            style: BorderStyle.solid),
+                          color: AppColors.outlineVariant,
+                          style: BorderStyle.solid,
+                        ),
                       ),
                       child: Column(
                         children: [
-                          Icon(Icons.upload_file_rounded,
-                              color: AppColors.textHint, size: 24.sp),
+                          Icon(
+                            Icons.upload_file_rounded,
+                            color: AppColors.textHint,
+                            size: 24.sp,
+                          ),
                           SizedBox(height: 6.h),
                           Text(
                             'Upload License / Documents',
@@ -291,18 +317,24 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         : () async {
                             setState(() => _isSaving = true);
                             await Future.delayed(
-                                const Duration(milliseconds: 1000));
+                              const Duration(milliseconds: 1000),
+                            );
                             if (mounted) {
                               setState(() => _isSaving = false);
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content:
-                                      const Text('Profile saved successfully!'),
+                                  content: const Text(
+                                    'Profile saved successfully!',
+                                    style: TextStyle(
+                                      color: AppColors.onPrimary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                                   backgroundColor: AppColors.success,
                                   behavior: SnackBarBehavior.floating,
                                   shape: RoundedRectangleBorder(
-                                      borderRadius:
-                                          BorderRadius.circular(10.r)),
+                                    borderRadius: BorderRadius.circular(10.r),
+                                  ),
                                 ),
                               );
                             }
@@ -365,8 +397,11 @@ class _StatChip extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color color;
-  const _StatChip(
-      {required this.icon, required this.label, required this.color});
+  const _StatChip({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
