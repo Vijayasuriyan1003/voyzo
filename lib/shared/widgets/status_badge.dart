@@ -3,67 +3,64 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../core/constants/app_colors.dart';
 import '../../features/bookings/data/models/booking_model.dart';
 
+/// Figma renders trip/booking status as a bold colored text label
+/// (e.g. "On Going" green, "Completed" amber) rather than a filled pill.
 class StatusBadge extends StatelessWidget {
   final BookingStatus status;
 
   const StatusBadge({super.key, required this.status});
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
-      decoration: BoxDecoration(
-        color: _bgColor,
-        borderRadius: BorderRadius.circular(20.r),
-      ),
-      child: Text(
-        _label,
-        style: TextStyle(
-          color: _textColor,
-          fontSize: 11.sp,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.3,
-        ),
-      ),
-    );
-  }
-
-  String get _label {
+  static String labelOf(BookingStatus status) {
     switch (status) {
+      case BookingStatus.active:
+        return 'On Going';
       case BookingStatus.upcoming:
         return 'Upcoming';
-      case BookingStatus.active:
-        return 'Active';
       case BookingStatus.completed:
         return 'Completed';
       case BookingStatus.cancelled:
         return 'Cancelled';
+      case BookingStatus.open:
+        return 'Open';
+      case BookingStatus.booked:
+        return 'Booked';
+      case BookingStatus.draft:
+        return 'Draft';
+      case BookingStatus.pending:
+        return 'Pending';
     }
   }
 
-  Color get _bgColor {
+  static Color colorOf(BookingStatus status) {
     switch (status) {
-      case BookingStatus.upcoming:
-        return AppColors.upcomingContainer;
       case BookingStatus.active:
-        return AppColors.activeContainer;
-      case BookingStatus.completed:
-        return AppColors.successContainer;
-      case BookingStatus.cancelled:
-        return const Color(0xFFF5F5F5);
-    }
-  }
-
-  Color get _textColor {
-    switch (status) {
+        return AppColors.statusOngoing;
       case BookingStatus.upcoming:
         return AppColors.upcoming;
-      case BookingStatus.active:
-        return AppColors.active;
       case BookingStatus.completed:
-        return AppColors.success;
+        return AppColors.statusCompleted;
       case BookingStatus.cancelled:
-        return const Color(0xFF424242);
+        return AppColors.statusCancelled;
+      case BookingStatus.open:
+        return AppColors.statusOpen;
+      case BookingStatus.booked:
+        return AppColors.statusBooked;
+      case BookingStatus.draft:
+        return AppColors.statusDraft;
+      case BookingStatus.pending:
+        return AppColors.statusPending;
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      labelOf(status),
+      style: TextStyle(
+        color: colorOf(status),
+        fontSize: 15.sp,
+        fontWeight: FontWeight.w600,
+      ),
+    );
   }
 }

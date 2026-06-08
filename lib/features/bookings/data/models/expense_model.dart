@@ -15,8 +15,9 @@ class ExpenseModel {
 
   static const List<String> expenseTypes = [
     'Toll',
-    'Fuel',
+    'Night',
     'Parking',
+    'Fuel',
     'Food',
     'Maintenance',
     'Other',

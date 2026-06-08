@@ -4,9 +4,10 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../shared/providers/auth_provider.dart';
-import '../../../../shared/widgets/app_button.dart';
-import '../../../../shared/widgets/app_text_field.dart';
 
+/// Figma "Driver Login" (node 350:1023) — a clean white screen with the
+/// "Driver Login" title, two rounded input fields (email id, Password) and an
+/// amber "Log In" button.
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -15,10 +16,9 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _rememberMe = false;
+  bool _obscure = true;
   bool _isLoading = false;
 
   @override
@@ -29,210 +29,141 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _login() async {
-    if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 1200));
+    await Future.delayed(const Duration(milliseconds: 900));
     if (mounted) {
       ref.read(isLoggedInProvider.notifier).state = true;
-      context.go('/bookings');
+      context.go('/trip-list');
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.white,
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              // Header gradient section
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.symmetric(vertical: 48.h, horizontal: 24.w),
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color(0xFFFFF8F5), Color(0xFFFDE8CC)],
+        child: Center(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.symmetric(horizontal: 24.w),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Driver Login',
+                  style: TextStyle(
+                    fontSize: 22.sp,
+                    fontWeight: FontWeight.w400,
+                    color: AppColors.textPrimary,
                   ),
                 ),
-                child: Column(
-                  children: [
-                    Container(
-                      width: 72.w,
-                      height: 72.h,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(20.r),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withOpacity(0.3),
-                            blurRadius: 16,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: Center(
-                        child: Text(
-                          'V',
-                          style: TextStyle(
-                            fontSize: 38.sp,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 16.h),
-                    Text(
-                      'VOYZO',
-                      style: TextStyle(
-                        fontSize: 26.sp,
-                        fontWeight: FontWeight.w900,
-                        color: AppColors.primaryDark,
-                        letterSpacing: 3,
-                      ),
-                    ),
-                    SizedBox(height: 4.h),
-                    Text(
-                      'Driver Portal',
-                      style: TextStyle(
-                        fontSize: 13.sp,
-                        color: AppColors.textSecondary,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 1.5,
-                      ),
-                    ),
-                  ],
+                SizedBox(height: 56.h),
+                _Field(
+                  controller: _emailController,
+                  hint: 'email id',
+                  icon: Icons.mail_outline_rounded,
+                  keyboardType: TextInputType.emailAddress,
                 ),
-              ),
-
-              // Form section
-              Padding(
-                padding: EdgeInsets.all(24.w),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Welcome Back!',
-                        style: TextStyle(
-                          fontSize: 22.sp,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                        ),
+                SizedBox(height: 18.h),
+                _Field(
+                  controller: _passwordController,
+                  hint: 'Password',
+                  icon: Icons.lock_outline_rounded,
+                  obscure: _obscure,
+                  suffix: IconButton(
+                    icon: Icon(
+                      _obscure
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                      color: AppColors.labelGrey,
+                      size: 20.sp,
+                    ),
+                    onPressed: () => setState(() => _obscure = !_obscure),
+                  ),
+                ),
+                SizedBox(height: 28.h),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52.h,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _login,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: const Color(0xFFF2F2F2),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(100.r),
                       ),
-                      SizedBox(height: 4.h),
-                      Text(
-                        'Sign in to access your trips',
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      SizedBox(height: 28.h),
-
-                      AppTextField(
-                        label: 'Email / Mobile Number',
-                        hint: 'Enter your email or phone',
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        prefixIcon: const Icon(
-                          Icons.person_outline_rounded,
-                          color: AppColors.textHint,
-                        ),
-                        validator: (v) =>
-                            (v == null || v.isEmpty) ? 'Required' : null,
-                      ),
-                      SizedBox(height: 16.h),
-
-                      AppTextField(
-                        label: 'Password',
-                        hint: 'Enter your password',
-                        controller: _passwordController,
-                        isPassword: true,
-                        prefixIcon: const Icon(
-                          Icons.lock_outline_rounded,
-                          color: AppColors.textHint,
-                        ),
-                        validator: (v) => (v == null || v.length < 4)
-                            ? 'Min 4 characters'
-                            : null,
-                      ),
-                      SizedBox(height: 12.h),
-
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              SizedBox(
-                                width: 20.w,
-                                height: 20.h,
-                                child: Checkbox(
-                                  value: _rememberMe,
-                                  activeColor: AppColors.primary,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(4.r),
-                                  ),
-                                  onChanged: (v) =>
-                                      setState(() => _rememberMe = v ?? false),
-                                ),
-                              ),
-                              SizedBox(width: 8.w),
-                              Text(
-                                'Remember me',
-                                style: TextStyle(
-                                  fontSize: 13.sp,
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              context.push('/forgot-password');
-                            },
-                            child: Text(
-                              'Forgot Password?',
-                              style: TextStyle(
-                                fontSize: 13.sp,
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.w600,
-                              ),
+                    ),
+                    child: _isLoading
+                        ? SizedBox(
+                            width: 22.w,
+                            height: 22.h,
+                            child: const CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Text(
+                            'Log In',
+                            style: TextStyle(
+                              fontSize: 18.sp,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFFF2F2F2),
                             ),
                           ),
-                        ],
-                      ),
-                      SizedBox(height: 28.h),
-
-                      AppButton(
-                        label: 'Log In',
-                        onTap: _isLoading ? null : _login,
-                        isLoading: _isLoading,
-                      ),
-                      SizedBox(height: 20.h),
-
-                      // Support
-                      Center(
-                        child: Text(
-                          'Having issues? Contact support',
-                          style: TextStyle(
-                            fontSize: 12.sp,
-                            color: AppColors.textHint,
-                          ),
-                        ),
-                      ),
-                    ],
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
+}
+
+/// Rounded outlined field with a leading icon (Figma driver login).
+class _Field extends StatelessWidget {
+  final TextEditingController controller;
+  final String hint;
+  final IconData icon;
+  final bool obscure;
+  final Widget? suffix;
+  final TextInputType keyboardType;
+
+  const _Field({
+    required this.controller,
+    required this.hint,
+    required this.icon,
+    this.obscure = false,
+    this.suffix,
+    this.keyboardType = TextInputType.text,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      obscureText: obscure,
+      keyboardType: keyboardType,
+      style: TextStyle(fontSize: 15.sp, color: AppColors.textPrimary),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: TextStyle(color: AppColors.labelGrey, fontSize: 15.sp),
+        prefixIcon: Icon(icon, color: AppColors.labelGrey, size: 22.sp),
+        suffixIcon: suffix,
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
+        border: _border(AppColors.outlineVariant),
+        enabledBorder: _border(AppColors.outlineVariant),
+        focusedBorder: _border(AppColors.primary),
+      ),
+    );
+  }
+
+  OutlineInputBorder _border(Color c) => OutlineInputBorder(
+        borderRadius: BorderRadius.circular(100.r),
+        borderSide: BorderSide(color: c),
+      );
 }

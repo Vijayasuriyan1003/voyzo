@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:dropdown_button2/dropdown_button2.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../shared/widgets/app_button.dart';
-import '../../../../shared/widgets/app_text_field.dart';
 import '../../../../shared/widgets/voyzo_app_bar.dart';
 import '../../data/models/booking_model.dart';
+import '../../data/models/expense_model.dart';
 import '../providers/booking_provider.dart';
+import '../widgets/detail_widgets.dart';
 
+/// Figma driver "List Details" (node 350:1255) — guest, duty/trip type, route,
+/// OTP + Start KM, "Add extra Charges" and Save.
 class TripDetailsScreen extends ConsumerStatefulWidget {
   final String bookingId;
   const TripDetailsScreen({super.key, required this.bookingId});
@@ -22,8 +25,8 @@ class TripDetailsScreen extends ConsumerStatefulWidget {
 class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
   final _otpController = TextEditingController();
   final _startKmController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
+  bool _showCharges = false;
 
   @override
   void dispose() {
@@ -32,424 +35,281 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
     super.dispose();
   }
 
-  Future<void> _startTrip(BookingModel booking) async {
-    if (!_formKey.currentState!.validate()) return;
+  void _toast(String msg, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: color,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
+      ),
+    );
+  }
 
-    if (_otpController.text.trim() != (booking.otp ?? '')) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Invalid OTP. Please try again.'),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
-        ),
-      );
+  Future<void> _save(BookingModel booking) async {
+    if (_otpController.text.trim().isEmpty ||
+        _startKmController.text.trim().isEmpty) {
+      _toast('Enter OTP and Start KM', AppColors.error);
       return;
     }
-
+    if (_otpController.text.trim() != (booking.otp ?? '')) {
+      _toast('Invalid OTP. Please try again.', AppColors.error);
+      return;
+    }
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 800));
-
+    await Future.delayed(const Duration(milliseconds: 700));
     final km = double.tryParse(_startKmController.text.trim()) ?? 0;
     ref.read(bookingProvider.notifier).startTrip(booking.id, km);
-
-    if (mounted) {
-      context.pushReplacement('/active-trip', extra: booking.id);
-    }
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+    _toast('Trip started', AppColors.success);
+    context.pop();
   }
 
   @override
   Widget build(BuildContext context) {
-    final booking = ref.watch(bookingProvider.notifier).getBookingById(widget.bookingId);
-
+    final booking =
+        ref.watch(bookingProvider.notifier).getBookingById(widget.bookingId);
     if (booking == null) {
       return const Scaffold(body: Center(child: Text('Booking not found')));
     }
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: VoyzoAppBar(title: 'Trip Details'),
-      body: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Status banner
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-                decoration: BoxDecoration(
-                  color: AppColors.upcomingContainer,
-                  borderRadius: BorderRadius.circular(12.r),
-                  border: Border.all(color: AppColors.upcoming.withOpacity(0.2)),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.schedule_rounded,
-                        color: AppColors.upcoming, size: 18.sp),
-                    SizedBox(width: 8.w),
-                    Text(
-                      'Upcoming Trip  •  ${DateFormat('dd MMM yyyy, hh:mm a').format(booking.scheduledDateTime)}',
-                      style: TextStyle(
-                        fontSize: 13.sp,
-                        color: AppColors.upcoming,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 16.h),
-
-              // Guest card
-              _SectionCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _SectionTitle(icon: Icons.person_rounded, label: 'Guest Details'),
-                    SizedBox(height: 12.h),
-                    Row(
+      backgroundColor: AppColors.greyBackground,
+      appBar: const VoyzoAppBar(title: 'List Details'),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 24.h),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const DetailHeading('Guest Details'),
+            SizedBox(height: 10.h),
+            // Guest card — name, pickup date/time and amber call button.
+            WhiteCard(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        CircleAvatar(
-                          radius: 24.r,
-                          backgroundColor: AppColors.primary,
-                          child: Text(
-                            booking.passengerName.substring(0, 2).toUpperCase(),
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 14.sp,
-                            ),
+                        Text(
+                          booking.passengerName,
+                          style: TextStyle(
+                            fontSize: 15.sp,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
                           ),
                         ),
-                        SizedBox(width: 12.w),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                booking.passengerName,
-                                style: TextStyle(
-                                  fontSize: 15.sp,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                              SizedBox(height: 2.h),
-                              Text(
-                                booking.passengerPhone,
-                                style: TextStyle(
-                                  fontSize: 13.sp,
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                            ],
+                        SizedBox(height: 14.h),
+                        TwoColRow(
+                          left: LabelledValue(
+                            label: 'Pickup date',
+                            value: DateFormat('dd-MM-yyyy')
+                                .format(booking.scheduledDateTime),
                           ),
-                        ),
-                        _InfoChip(
-                          label: booking.bookingType,
-                          icon: Icons.flight_rounded,
+                          right: LabelledValue(
+                            label: 'Pickup Time',
+                            value: DateFormat('HH:mm:ss')
+                                .format(booking.scheduledDateTime),
+                          ),
                         ),
                       ],
                     ),
-                    SizedBox(height: 8.h),
-                    _InfoRow(
-                      label: 'Booking Ref',
-                      value: booking.bookingCode,
+                  ),
+                  SizedBox(width: 12.w),
+                  Container(
+                    width: 40.w,
+                    height: 40.w,
+                    decoration: const BoxDecoration(
+                      color: AppColors.primary,
+                      shape: BoxShape.circle,
                     ),
-                  ],
-                ),
+                    child: Icon(Icons.call, color: Colors.white, size: 20.sp),
+                  ),
+                ],
               ),
-              SizedBox(height: 12.h),
-
-              // Route card
-              _SectionCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _SectionTitle(
-                        icon: Icons.route_rounded, label: 'Trip Route'),
-                    SizedBox(height: 16.h),
-                    _RouteTimeline(
-                      pickup: booking.pickupLocation,
-                      drop: booking.dropLocation,
+            ),
+            SizedBox(height: 12.h),
+            // Duty / Trip / Sub trip type.
+            WhiteCard(
+              child: Column(
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: LabelledValue(
+                      label: 'Duty Type',
+                      value: booking.dutyType,
                     ),
-                  ],
-                ),
+                  ),
+                  SizedBox(height: 14.h),
+                  TwoColRow(
+                    left: LabelledValue(
+                      label: 'Trip Type',
+                      value: booking.tripType,
+                    ),
+                    right: LabelledValue(
+                      label: 'Sub Trip Type',
+                      value: booking.subTripType,
+                      align: CrossAxisAlignment.end,
+                    ),
+                  ),
+                ],
               ),
-              SizedBox(height: 12.h),
-
-              // Vehicle card
-              _SectionCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _SectionTitle(
-                        icon: Icons.directions_car_rounded,
-                        label: 'Vehicle Details'),
-                    SizedBox(height: 12.h),
-                    _InfoRow(label: 'Vehicle', value: booking.vehicleInfo),
-                    _InfoRow(label: 'Number', value: booking.vehicleNumber),
-                    _InfoRow(
-                        label: 'Trip Amount',
-                        value: '₹ ${booking.tripAmount.toStringAsFixed(0)}',
-                        highlight: true),
-                  ],
-                ),
+            ),
+            SizedBox(height: 12.h),
+            // Route.
+            WhiteCard(
+              child: LocationTimeline(
+                pickup: booking.pickupLocation,
+                drop: booking.dropLocation,
               ),
-              SizedBox(height: 16.h),
-
-              // OTP + Start KM inputs
-              _SectionCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _SectionTitle(
-                        icon: Icons.play_circle_outline_rounded,
-                        label: 'Start Trip'),
-                    SizedBox(height: 16.h),
-                    AppTextField(
-                      label: 'OTP Verification',
-                      hint: 'Enter passenger OTP',
+            ),
+            SizedBox(height: 12.h),
+            // OTP + Start KM.
+            WhiteCard(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: PillInput(
+                      label: 'OTP',
                       controller: _otpController,
                       keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(6),
-                      ],
-                      prefixIcon: const Icon(Icons.pin_outlined,
-                          color: AppColors.textHint),
-                      validator: (v) =>
-                          (v == null || v.isEmpty) ? 'OTP required' : null,
                     ),
-                    SizedBox(height: 14.h),
-                    AppTextField(
-                      label: 'Start Kilometre (KM)',
-                      hint: 'Enter current odometer reading',
+                  ),
+                  SizedBox(width: 14.w),
+                  Expanded(
+                    child: PillInput(
+                      label: 'Start KM',
                       controller: _startKmController,
-                      keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true),
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(
-                            RegExp(r'^\d+\.?\d*')),
-                      ],
-                      prefixIcon: const Icon(Icons.speed_outlined,
-                          color: AppColors.textHint),
-                      validator: (v) =>
-                          (v == null || v.isEmpty) ? 'Start KM required' : null,
+                      keyboardType: TextInputType.number,
                     ),
-                  ],
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 14.h),
+            Align(
+              alignment: Alignment.centerRight,
+              child: GestureDetector(
+                onTap: () => setState(() => _showCharges = !_showCharges),
+                child: Text(
+                  'Add extra Charges',
+                  style: TextStyle(
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary,
+                  ),
                 ),
               ),
-              SizedBox(height: 32.h),
-
-              AppButton(
-                label: 'Start Trip',
-                onTap: _isLoading ? null : () => _startTrip(booking),
-                isLoading: _isLoading,
-                icon: Icons.play_arrow_rounded,
-              ),
-              SizedBox(height: 24.h),
+            ),
+            if (_showCharges) ...[
+              SizedBox(height: 14.h),
+              const _AdditionalChargesCard(),
             ],
-          ),
+            SizedBox(height: 18.h),
+            AppButton(
+                label: 'Save', onTap: () => _save(booking), isLoading: _isLoading),
+            SizedBox(height: 24.h),
+          ],
         ),
       ),
     );
   }
 }
 
-// ── Reusable sub-widgets ──────────────────────────────────────────────────────
+/// Figma "Add extra Charges" state — Charges Type, Amount and an upload row,
+/// repeatable for Toll / Night / Parking.
+class _AdditionalChargesCard extends StatefulWidget {
+  const _AdditionalChargesCard();
 
-class _SectionCard extends StatelessWidget {
-  final Widget child;
-  const _SectionCard({required this.child});
+  @override
+  State<_AdditionalChargesCard> createState() => _AdditionalChargesCardState();
+}
 
+class _AdditionalChargesCardState extends State<_AdditionalChargesCard> {
+  String? _type;
+  final _amount = TextEditingController();
+
+  @override
+  void dispose() {
+    _amount.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return WhiteCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Charges Type',
+                  style: TextStyle(
+                      fontSize: 13.sp, color: AppColors.textPrimary)),
+              SizedBox(height: 8.h),
+              DropdownButtonFormField2<String>(
+                valueListenable: ValueNotifier(_type),
+                isExpanded: true,
+                decoration: InputDecoration(
+                  isDense: true,
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30.r),
+                    borderSide:
+                        const BorderSide(color: AppColors.outlineVariant),
+                  ),
+                ),
+                items: ExpenseModel.expenseTypes
+                    .map((t) => DropdownItem(value: t, child: Text(t)))
+                    .toList(),
+                onChanged: (v) => setState(() => _type = v),
+              ),
+            ],
+          ),
+          SizedBox(height: 16.h),
+          PillInput(
+            label: 'Amount',
+            controller: _amount,
+            keyboardType: TextInputType.number,
+          ),
+          SizedBox(height: 16.h),
+          Text('Upload multiple files',
+              style:
+                  TextStyle(fontSize: 13.sp, color: AppColors.textPrimary)),
+          SizedBox(height: 8.h),
+          DottedUpload(),
+        ],
+      ),
+    );
+  }
+}
+
+/// Dashed upload box for charge proof images.
+class DottedUpload extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(16.w),
+      height: 64.h,
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: AppColors.outlineVariant, width: 0.5),
-        boxShadow: [
-          BoxShadow(
-              color: AppColors.cardShadow, blurRadius: 8, offset: const Offset(0, 2)),
-        ],
+        color: AppColors.greyBackground,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: AppColors.outlineVariant),
       ),
-      child: child,
-    );
-  }
-}
-
-class _SectionTitle extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  const _SectionTitle({required this.icon, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, size: 16.sp, color: AppColors.primary),
-        SizedBox(width: 6.w),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  final String label;
-  final String value;
-  final bool highlight;
-  const _InfoRow(
-      {required this.label, required this.value, this.highlight = false});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 5.h),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SizedBox(
-            width: 110.w,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 12.sp,
-                color: AppColors.textHint,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyle(
-                fontSize: 13.sp,
-                color: highlight ? AppColors.primary : AppColors.textPrimary,
-                fontWeight:
-                    highlight ? FontWeight.w700 : FontWeight.w600,
-              ),
-            ),
-          ),
+          Icon(Icons.cloud_upload_outlined,
+              color: AppColors.labelGrey, size: 22.sp),
+          SizedBox(height: 4.h),
+          Text('Upload files',
+              style: TextStyle(fontSize: 12.sp, color: AppColors.labelGrey)),
         ],
       ),
-    );
-  }
-}
-
-class _InfoChip extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  const _InfoChip({required this.label, required this.icon});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
-      decoration: BoxDecoration(
-        color: AppColors.primaryLight.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(8.r),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12.sp, color: AppColors.primaryDark),
-          SizedBox(width: 4.w),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11.sp,
-              color: AppColors.primaryDark,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _RouteTimeline extends StatelessWidget {
-  final String pickup;
-  final String drop;
-  const _RouteTimeline({required this.pickup, required this.drop});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Column(
-          children: [
-            Container(
-              width: 10.w,
-              height: 10.h,
-              decoration: const BoxDecoration(
-                color: AppColors.primary,
-                shape: BoxShape.circle,
-              ),
-            ),
-            Container(
-              width: 2.w,
-              height: 36.h,
-              color: AppColors.outlineVariant,
-            ),
-            Icon(Icons.location_on, size: 16.sp, color: AppColors.error),
-          ],
-        ),
-        SizedBox(width: 12.w),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Pickup',
-                style: TextStyle(
-                    fontSize: 11.sp, color: AppColors.textHint),
-              ),
-              SizedBox(height: 2.h),
-              Text(
-                pickup,
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              SizedBox(height: 22.h),
-              Text(
-                'Drop-off',
-                style: TextStyle(
-                    fontSize: 11.sp, color: AppColors.textHint),
-              ),
-              SizedBox(height: 2.h),
-              Text(
-                drop,
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }

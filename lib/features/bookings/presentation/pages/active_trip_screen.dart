@@ -63,16 +63,7 @@ class _ActiveTripScreenState extends ConsumerState<ActiveTripScreen> {
         booking: booking,
         onConfirm: (endKm) {
           ref.read(bookingProvider.notifier).endTrip(booking.id, endKm);
-          context.go('/bookings');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Trip ended successfully!'),
-              backgroundColor: AppColors.success,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10.r)),
-            ),
-          );
+          context.pushReplacement('/payment', extra: booking.id);
         },
       ),
     );

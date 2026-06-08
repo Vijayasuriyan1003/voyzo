@@ -1,6 +1,17 @@
 import 'expense_model.dart';
 
-enum BookingStatus { upcoming, active, completed, cancelled }
+// Figma statuses: On Going, Completed, Cancelled, Draft, Open, Booked, Pending.
+// `active` is rendered as "On Going".
+enum BookingStatus {
+  upcoming,
+  active,
+  completed,
+  cancelled,
+  open,
+  booked,
+  draft,
+  pending,
+}
 
 enum PaymentStatus { pending, paid, partial }
 
@@ -12,11 +23,19 @@ class BookingModel {
   final String pickupLocation;
   final String dropLocation;
   final DateTime scheduledDateTime;
+  final DateTime? endDateTime;
   final BookingStatus status;
   final String vehicleInfo;
   final String vehicleNumber;
   final double tripAmount;
   final String bookingType;
+  // Figma trip-detail fields.
+  final String dutyType; // e.g. "300 KM Per Day"
+  final String tripType; // e.g. "Transfer"
+  final String subTripType; // e.g. "One way"
+  final double gst;
+  final String? driverName;
+  final String? driverPhone;
   final String? otp;
   final double? startKm;
   final double? endKm;
@@ -40,6 +59,13 @@ class BookingModel {
     required this.vehicleNumber,
     required this.tripAmount,
     required this.bookingType,
+    this.endDateTime,
+    this.dutyType = '300 KM Per Day',
+    this.tripType = 'Transfer',
+    this.subTripType = 'One way',
+    this.gst = 0,
+    this.driverName,
+    this.driverPhone,
     this.otp,
     this.startKm,
     this.endKm,
@@ -53,7 +79,7 @@ class BookingModel {
 
   double get totalExpenses => expenses.fold(0, (sum, e) => sum + e.amount);
 
-  double get totalAmount => tripAmount + totalExpenses;
+  double get totalAmount => tripAmount + totalExpenses + gst;
 
   double? get distanceTravelled =>
       (startKm != null && endKm != null) ? endKm! - startKm! : totalDistanceKm;
@@ -76,11 +102,18 @@ class BookingModel {
         pickupLocation: pickupLocation,
         dropLocation: dropLocation,
         scheduledDateTime: scheduledDateTime,
+        endDateTime: endDateTime,
         status: status ?? this.status,
         vehicleInfo: vehicleInfo,
         vehicleNumber: vehicleNumber,
         tripAmount: tripAmount,
         bookingType: bookingType,
+        dutyType: dutyType,
+        tripType: tripType,
+        subTripType: subTripType,
+        gst: gst,
+        driverName: driverName,
+        driverPhone: driverPhone,
         otp: otp,
         startKm: startKm ?? this.startKm,
         endKm: endKm ?? this.endKm,
