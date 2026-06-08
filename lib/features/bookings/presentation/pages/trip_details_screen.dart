@@ -5,8 +5,10 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../shared/widgets/app_button.dart';
+import '../../../../shared/widgets/confirm_dialog.dart';
 import '../../../../shared/widgets/voyzo_app_bar.dart';
 import '../../data/models/booking_model.dart';
+import '../../data/models/expense_model.dart';
 import '../providers/booking_provider.dart';
 import '../widgets/detail_widgets.dart';
 
@@ -92,6 +94,54 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
     setState(() => _isLoading = false);
     _toast('Trip completed', AppColors.success);
     context.pop();
+  }
+
+  Widget _expenseRow(BookingModel booking, ExpenseModel e) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 12.h),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              e.notes ?? e.type,
+              style: TextStyle(fontSize: 14.sp, color: AppColors.textPrimary),
+            ),
+          ),
+          Text(
+            'INR. ${e.amount.toStringAsFixed(0)}',
+            style: TextStyle(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          SizedBox(width: 12.w),
+          GestureDetector(
+            onTap: () => context.push(
+              '/add-expense',
+              extra: {'bookingId': booking.id, 'expenseId': e.id},
+            ),
+            child: Icon(Icons.edit_outlined,
+                size: 18.sp, color: AppColors.primary),
+          ),
+          SizedBox(width: 12.w),
+          GestureDetector(
+            onTap: () => _deleteExpense(booking, e),
+            child: Icon(Icons.delete_outline_rounded,
+                size: 19.sp, color: AppColors.error),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deleteExpense(BookingModel booking, ExpenseModel e) async {
+    final ok = await showConfirmDialog(
+      context,
+      message: 'Do you want to delete the ${e.notes ?? e.type} charge?',
+    );
+    if (!ok) return;
+    ref.read(bookingProvider.notifier).removeExpense(booking.id, e.id);
   }
 
   @override
@@ -227,23 +277,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
               : Column(
                   children: [
                     for (final e in booking.expenses)
-                      Padding(
-                        padding: EdgeInsets.only(bottom: 10.h),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(e.notes ?? e.type,
-                                style: TextStyle(
-                                    fontSize: 14.sp,
-                                    color: AppColors.textPrimary)),
-                            Text('INR. ${e.amount.toStringAsFixed(0)}',
-                                style: TextStyle(
-                                    fontSize: 14.sp,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.textPrimary)),
-                          ],
-                        ),
-                      ),
+                      _expenseRow(booking, e),
                   ],
                 ),
         ),

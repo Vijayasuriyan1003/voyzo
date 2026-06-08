@@ -11,10 +11,12 @@ import '../providers/booking_provider.dart';
 import '../widgets/detail_widgets.dart';
 
 /// Figma "Add Expense" (node 463:1244) — Charges Type, Amount and an upload
-/// field, with a Save button. Adds an extra charge to the active trip.
+/// field, with a Save button. Adds (or, when [expenseId] is given, edits) an
+/// extra charge on the active trip.
 class AddExpenseScreen extends ConsumerStatefulWidget {
   final String bookingId;
-  const AddExpenseScreen({super.key, required this.bookingId});
+  final String? expenseId;
+  const AddExpenseScreen({super.key, required this.bookingId, this.expenseId});
 
   @override
   ConsumerState<AddExpenseScreen> createState() => _AddExpenseScreenState();
@@ -24,6 +26,24 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
   String? _type;
   final _amount = TextEditingController();
   String? _fileName;
+
+  bool get _isEdit => widget.expenseId != null;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_isEdit) {
+      final booking =
+          ref.read(bookingProvider.notifier).getBookingById(widget.bookingId);
+      for (final e in booking?.expenses ?? const <ExpenseModel>[]) {
+        if (e.id == widget.expenseId) {
+          _type = e.type;
+          _amount.text = e.amount.toStringAsFixed(0);
+          break;
+        }
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -45,15 +65,28 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
       );
       return;
     }
-    ref.read(bookingProvider.notifier).addExpense(
-          widget.bookingId,
-          ExpenseModel(
-            id: 'EX${DateTime.now().millisecondsSinceEpoch}',
-            type: _type!,
-            amount: amt,
-            addedAt: DateTime.now(),
-          ),
-        );
+    final notifier = ref.read(bookingProvider.notifier);
+    if (_isEdit) {
+      notifier.updateExpense(
+        widget.bookingId,
+        ExpenseModel(
+          id: widget.expenseId!,
+          type: _type!,
+          amount: amt,
+          addedAt: DateTime.now(),
+        ),
+      );
+    } else {
+      notifier.addExpense(
+        widget.bookingId,
+        ExpenseModel(
+          id: 'EX${DateTime.now().millisecondsSinceEpoch}',
+          type: _type!,
+          amount: amt,
+          addedAt: DateTime.now(),
+        ),
+      );
+    }
     context.pop();
   }
 
@@ -61,7 +94,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.greyBackground,
-      appBar: const VoyzoAppBar(title: 'Add Expense'),
+      appBar: VoyzoAppBar(title: _isEdit ? 'Edit Expense' : 'Add Expense'),
       body: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(20.w, 24.h, 20.w, 24.h),
         child: Column(

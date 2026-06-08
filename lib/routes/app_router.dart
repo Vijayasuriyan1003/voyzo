@@ -106,8 +106,16 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/add-expense',
-      builder: (context, state) =>
-          AddExpenseScreen(bookingId: state.extra as String),
+      builder: (context, state) {
+        final extra = state.extra;
+        if (extra is Map) {
+          return AddExpenseScreen(
+            bookingId: extra['bookingId'] as String,
+            expenseId: extra['expenseId'] as String?,
+          );
+        }
+        return AddExpenseScreen(bookingId: extra as String);
+      },
     ),
     GoRoute(
       path: '/active-trip',
