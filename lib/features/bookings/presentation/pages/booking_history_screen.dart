@@ -4,7 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../shared/mock_data/mock_data.dart';
+import '../../../../shared/widgets/voyzo_app_bar.dart';
 import '../../data/models/booking_model.dart';
 import '../providers/booking_provider.dart';
 import '../widgets/trip_route_card.dart';
@@ -21,9 +21,9 @@ class BookingHistoryScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.greyBackground,
+      appBar: const VoyzoAppBar(title: 'Booking History', showBack: false),
       body: Column(
         children: [
-          _TopBar(),
           SizedBox(height: 14.h),
           _Filters(
             active: state.activeFilter,
@@ -64,59 +64,6 @@ class BookingHistoryScreen extends ConsumerWidget {
   void _onTap(BuildContext context, WidgetRef ref, BookingModel booking) {
     ref.read(selectedBookingIdProvider.notifier).state = booking.id;
     context.push('/trip-details', extra: booking.id);
-  }
-}
-
-/// White header bar: centred "Booking History" title + circular "AD" avatar
-/// that opens the driver Profile.
-class _TopBar extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 60.h + MediaQuery.of(context).padding.top,
-      padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0x33000000),
-            blurRadius: 10,
-            offset: const Offset(0, 0),
-          ),
-        ],
-      ),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Text(
-            'Booking History',
-            style: TextStyle(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          Positioned(
-            right: 16.w,
-            child: GestureDetector(
-              onTap: () => context.push('/profile'),
-              child: CircleAvatar(
-                radius: 16.r,
-                backgroundColor: AppColors.avatarGrey,
-                child: Text(
-                  MockData.driver['initials'] as String,
-                  style: TextStyle(
-                    color: AppColors.primary,
-                    fontSize: 13.sp,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
 

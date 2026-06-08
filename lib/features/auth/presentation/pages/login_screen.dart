@@ -33,7 +33,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     await Future.delayed(const Duration(milliseconds: 900));
     if (mounted) {
       ref.read(isLoggedInProvider.notifier).state = true;
-      context.go('/trip-list');
+      context.go('/booking-history');
     }
   }
 

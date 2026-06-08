@@ -63,11 +63,16 @@ final appRouter = GoRouter(
     GoRoute(path: '/home_page', builder: (context, state) => const HomePage()),
 
     // ── Driver flow ──────────────────────────────────────────────────────────
+    // Login → Booking History → Trip Details (Trip Start); Profile via avatar.
+    GoRoute(
+      path: '/booking-history',
+      builder: (context, state) => const BookingHistoryScreen(),
+    ),
+    // Aliases (back-compat).
     GoRoute(
       path: '/trip-list',
       builder: (context, state) => const BookingHistoryScreen(),
     ),
-    // Back-compat alias.
     GoRoute(
       path: '/bookings',
       builder: (context, state) => const BookingHistoryScreen(),
