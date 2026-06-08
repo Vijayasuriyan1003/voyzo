@@ -146,11 +146,16 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final booking =
-        ref.watch(bookingProvider.notifier).getBookingById(widget.bookingId);
-    if (booking == null) {
+    // Watch the STATE (not the notifier) so the screen rebuilds when expenses
+    // are added/edited/deleted in place.
+    final matches = ref
+        .watch(bookingProvider)
+        .bookings
+        .where((b) => b.id == widget.bookingId);
+    if (matches.isEmpty) {
       return const Scaffold(body: Center(child: Text('Booking not found')));
     }
+    final booking = matches.first;
     final completed = booking.status == BookingStatus.completed;
     final started = booking.status == BookingStatus.active;
 
