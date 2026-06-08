@@ -3,20 +3,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:dropdown_button2/dropdown_button2.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/voyzo_app_bar.dart';
 import '../../data/models/booking_model.dart';
-import '../../data/models/expense_model.dart';
 import '../providers/booking_provider.dart';
 import '../widgets/detail_widgets.dart';
 
-/// Figma driver "Trip Details" (node 350:1255 + states). Two steps:
-///  • Trip Start  — OTP + Start KM, "Trip Start" button.
-///  • Trip End    — Start OTP/KM (read-only) + Extra Expenses + End OTP + End KM,
-///    "Trip End" button.
-/// The step shown depends on the booking status (upcoming → start, active → end).
+/// Figma driver "Trip Details" (node 350:1255 + states). Three states keyed off
+/// the booking status:
+///  • upcoming  → Trip Start  (OTP + Start KM, "Trip Start").
+///  • active    → Trip End    (Start OTP/KM read-only, Extra Expenses + Add
+///    Expense, End OTP + End KM, "Trip End").
+///  • completed → read-only "Trip Completed" summary (node 374:906).
 class TripDetailsScreen extends ConsumerStatefulWidget {
   final String bookingId;
   const TripDetailsScreen({super.key, required this.bookingId});
@@ -95,18 +94,6 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
     context.pop();
   }
 
-  void _addExpense(BookingModel booking, String type, double amount) {
-    ref.read(bookingProvider.notifier).addExpense(
-          booking.id,
-          ExpenseModel(
-            id: 'EX${DateTime.now().millisecondsSinceEpoch}',
-            type: type,
-            amount: amount,
-            addedAt: DateTime.now(),
-          ),
-        );
-  }
-
   @override
   Widget build(BuildContext context) {
     final booking =
@@ -114,6 +101,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
     if (booking == null) {
       return const Scaffold(body: Center(child: Text('Booking not found')));
     }
+    final completed = booking.status == BookingStatus.completed;
     final started = booking.status == BookingStatus.active;
 
     return Scaffold(
@@ -124,11 +112,21 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const DetailHeading('Guest Details'),
-            SizedBox(height: 10.h),
-            _guestCard(booking),
-            SizedBox(height: 12.h),
-            _dutyCard(booking),
+            if (completed) ...[
+              Text(
+                'Trip Completed',
+                style: TextStyle(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.statusCompleted,
+                ),
+              ),
+              SizedBox(height: 12.h),
+            ] else ...[
+              const DetailHeading('Guest Details'),
+              SizedBox(height: 10.h),
+            ],
+            _guestCard(booking, completed: completed),
             SizedBox(height: 12.h),
             WhiteCard(
               child: LocationTimeline(
@@ -137,7 +135,14 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
               ),
             ),
             SizedBox(height: 12.h),
-            if (!started) ..._startStep(booking) else ..._endStep(booking),
+            _dutyCard(booking),
+            SizedBox(height: 12.h),
+            if (completed)
+              _completedTrips(booking)
+            else if (started)
+              ..._endStep(booking)
+            else
+              ..._startStep(booking),
             SizedBox(height: 24.h),
           ],
         ),
@@ -178,7 +183,6 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
 
   // ── Step 2: Trip End ────────────────────────────────────────────────────
   List<Widget> _endStep(BookingModel booking) => [
-        // Start OTP / Start KM (entered values, read-only).
         WhiteCard(
           child: TwoColRow(
             left: LabelledValue(label: 'Start OTP', value: booking.otp ?? '-'),
@@ -190,14 +194,60 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
           ),
         ),
         SizedBox(height: 16.h),
-        const DetailHeading('Extra Expenses'),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const DetailHeading('Extra Expenses'),
+            GestureDetector(
+              onTap: () => context.push('/add-expense', extra: booking.id),
+              child: Row(
+                children: [
+                  Icon(Icons.add_circle_outline_rounded,
+                      color: AppColors.primary, size: 20.sp),
+                  SizedBox(width: 4.w),
+                  Text(
+                    'Add Expense',
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
         SizedBox(height: 10.h),
-        _ExpensesCard(
-          expenses: booking.expenses,
-          onAdd: (type, amount) => _addExpense(booking, type, amount),
+        WhiteCard(
+          child: booking.expenses.isEmpty
+              ? Text('No extra expenses added',
+                  style:
+                      TextStyle(fontSize: 13.sp, color: AppColors.labelGrey))
+              : Column(
+                  children: [
+                    for (final e in booking.expenses)
+                      Padding(
+                        padding: EdgeInsets.only(bottom: 10.h),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(e.notes ?? e.type,
+                                style: TextStyle(
+                                    fontSize: 14.sp,
+                                    color: AppColors.textPrimary)),
+                            Text('INR. ${e.amount.toStringAsFixed(0)}',
+                                style: TextStyle(
+                                    fontSize: 14.sp,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textPrimary)),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
         ),
         SizedBox(height: 16.h),
-        // End OTP / End KM.
         WhiteCard(
           child: Row(
             children: [
@@ -227,7 +277,33 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
         ),
       ];
 
-  Widget _guestCard(BookingModel booking) => WhiteCard(
+  // ── Completed: read-only summary (node 374:906) ───────────────────────────
+  Widget _completedTrips(BookingModel booking) => WhiteCard(
+        child: Column(
+          children: [
+            TwoColRow(
+              left: LabelledValue(label: 'OTP', value: booking.otp ?? '-'),
+              right: LabelledValue(
+                label: 'Start KM',
+                value: booking.startKm?.toStringAsFixed(0) ?? '-',
+                align: CrossAxisAlignment.end,
+              ),
+            ),
+            SizedBox(height: 14.h),
+            TwoColRow(
+              left: LabelledValue(label: 'OTP', value: booking.otp ?? '-'),
+              right: LabelledValue(
+                label: 'End KM',
+                value: booking.endKm?.toStringAsFixed(0) ?? '-',
+                align: CrossAxisAlignment.end,
+              ),
+            ),
+          ],
+        ),
+      );
+
+  Widget _guestCard(BookingModel booking, {required bool completed}) =>
+      WhiteCard(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -246,7 +322,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
                   SizedBox(height: 14.h),
                   TwoColRow(
                     left: LabelledValue(
-                      label: 'Pickup date',
+                      label: completed ? 'Picked-up on' : 'Pickup date',
                       value: DateFormat('dd-MM-yyyy')
                           .format(booking.scheduledDateTime),
                     ),
@@ -259,16 +335,18 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
                 ],
               ),
             ),
-            SizedBox(width: 12.w),
-            Container(
-              width: 40.w,
-              height: 40.w,
-              decoration: const BoxDecoration(
-                color: AppColors.primary,
-                shape: BoxShape.circle,
+            if (!completed) ...[
+              SizedBox(width: 12.w),
+              Container(
+                width: 40.w,
+                height: 40.w,
+                decoration: const BoxDecoration(
+                  color: AppColors.primary,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.call, color: Colors.white, size: 20.sp),
               ),
-              child: Icon(Icons.call, color: Colors.white, size: 20.sp),
-            ),
+            ],
           ],
         ),
       );
@@ -292,159 +370,4 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
           ],
         ),
       );
-}
-
-/// Extra Expenses card — lists existing Toll/Night/Parking charges and lets the
-/// driver add another (Charges Type + Amount).
-class _ExpensesCard extends StatefulWidget {
-  final List<ExpenseModel> expenses;
-  final void Function(String type, double amount) onAdd;
-  const _ExpensesCard({required this.expenses, required this.onAdd});
-
-  @override
-  State<_ExpensesCard> createState() => _ExpensesCardState();
-}
-
-class _ExpensesCardState extends State<_ExpensesCard> {
-  String? _type;
-  final _amount = TextEditingController();
-  bool _adding = false;
-
-  @override
-  void dispose() {
-    _amount.dispose();
-    super.dispose();
-  }
-
-  void _submit() {
-    final amt = double.tryParse(_amount.text.trim());
-    if (_type == null || amt == null || amt <= 0) return;
-    widget.onAdd(_type!, amt);
-    setState(() {
-      _type = null;
-      _amount.clear();
-      _adding = false;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return WhiteCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ...widget.expenses.map(
-            (e) => Padding(
-              padding: EdgeInsets.only(bottom: 10.h),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    e.notes ?? e.type,
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  Text(
-                    'INR. ${e.amount.toStringAsFixed(0)}',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          if (_adding) ...[
-            SizedBox(height: 4.h),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Charges Type',
-                          style: TextStyle(
-                              fontSize: 13.sp, color: AppColors.textPrimary)),
-                      SizedBox(height: 8.h),
-                      DropdownButtonFormField2<String>(
-                        valueListenable: ValueNotifier(_type),
-                        isExpanded: true,
-                        decoration: InputDecoration(
-                          isDense: true,
-                          contentPadding: EdgeInsets.symmetric(
-                              horizontal: 14.w, vertical: 12.h),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30.r),
-                            borderSide: const BorderSide(
-                                color: AppColors.outlineVariant),
-                          ),
-                        ),
-                        items: ExpenseModel.expenseTypes
-                            .map((t) =>
-                                DropdownItem(value: t, child: Text(t)))
-                            .toList(),
-                        onChanged: (v) => setState(() => _type = v),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(width: 12.w),
-                Expanded(
-                  child: PillInput(
-                    label: 'Amount',
-                    controller: _amount,
-                    keyboardType: TextInputType.number,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 12.h),
-            Row(
-              children: [
-                Expanded(
-                  child: AppButton(
-                    label: 'Add',
-                    height: 44,
-                    onTap: _submit,
-                  ),
-                ),
-                SizedBox(width: 12.w),
-                Expanded(
-                  child: AppButton(
-                    label: 'Cancel',
-                    height: 44,
-                    variant: AppButtonVariant.outline,
-                    onTap: () => setState(() => _adding = false),
-                  ),
-                ),
-              ],
-            ),
-          ] else
-            GestureDetector(
-              onTap: () => setState(() => _adding = true),
-              child: Row(
-                children: [
-                  Icon(Icons.add_circle_outline_rounded,
-                      color: AppColors.primary, size: 20.sp),
-                  SizedBox(width: 6.w),
-                  Text(
-                    'Add Charges',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
 }

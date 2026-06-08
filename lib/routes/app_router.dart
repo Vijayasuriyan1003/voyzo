@@ -17,6 +17,7 @@ import '../features/bookings/presentation/pages/booking_list_screen.dart';
 import '../features/bookings/presentation/pages/booking_request_screen.dart';
 import '../features/bookings/presentation/pages/add_booking_request_screen.dart';
 import '../features/bookings/presentation/pages/add_driver_trip_screen.dart';
+import '../features/bookings/presentation/pages/add_expense_screen.dart';
 import '../features/bookings/presentation/pages/booking_details_screen.dart';
 import '../features/bookings/presentation/pages/payment_screen.dart';
 import '../features/bookings/presentation/pages/payment_received_screen.dart';
@@ -102,6 +103,11 @@ final appRouter = GoRouter(
       path: '/trip-details',
       builder: (context, state) =>
           TripDetailsScreen(bookingId: state.extra as String),
+    ),
+    GoRoute(
+      path: '/add-expense',
+      builder: (context, state) =>
+          AddExpenseScreen(bookingId: state.extra as String),
     ),
     GoRoute(
       path: '/active-trip',
