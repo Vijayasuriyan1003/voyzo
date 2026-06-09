@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
-import '../../../../core/network/dio_client.dart';
-import '../../../../core/exceptions/app_exception.dart';
+import 'package:flutter/foundation.dart';
+import 'package:voyzo/core/exceptions/app_exception.dart';
+import 'package:voyzo/core/network/dio_client.dart';
 
 /// Result of a successful driver login.
 class DriverLoginResult {
@@ -57,21 +58,45 @@ class AuthApi {
   }
 
   Future<String> _loggedInUser() async {
-    final res = await DioClient.dio.get(
-      '/api/method/frappe.auth.get_logged_user',
-    );
-    return res.data['message'] as String;
+    try {
+      final res = await DioClient.dio.get(
+        '/api/method/frappe.auth.get_logged_user',
+      );
+      final userId = (res.data['message'] as String?) ?? '';
+      if (userId.isEmpty) {
+        throw const AppException(message: 'Could not resolve logged-in user.');
+      }
+      return userId;
+    } on AppException {
+      rethrow;
+    } on DioException catch (e) {
+      debugPrint('[AuthApi] _loggedInUser error: type=${e.type} status=${e.response?.statusCode}');
+      throw AppException(
+        message: 'Session error. Please try again.',
+        code: e.response?.statusCode,
+      );
+    }
   }
 
   Future<List<String>> _rolesFor(String user) async {
-    final res = await DioClient.dio.get(
-      '/api/resource/User/${Uri.encodeComponent(user)}',
-    );
-    final data = res.data['data'] as Map<String, dynamic>;
-    final roles = (data['roles'] as List?) ?? const [];
-    return roles
-        .map((r) => (r as Map)['role'] as String)
-        .toList(growable: false);
+    try {
+      final res = await DioClient.dio.get(
+        '/api/resource/User/${Uri.encodeComponent(user)}',
+      );
+      final data = res.data['data'] as Map<String, dynamic>;
+      final roles = (data['roles'] as List?) ?? const [];
+      return roles
+          .map((r) => (r as Map)['role'] as String)
+          .toList(growable: false);
+    } on AppException {
+      rethrow;
+    } on DioException catch (e) {
+      debugPrint('[AuthApi] _rolesFor error: type=${e.type} status=${e.response?.statusCode}');
+      throw AppException(
+        message: 'Could not verify driver role. Please try again.',
+        code: e.response?.statusCode,
+      );
+    }
   }
 
   Future<Response> register({
@@ -105,6 +130,7 @@ class AuthApi {
   }
 
   AppException _loginError(DioException e) {
+    debugPrint('[AuthApi] login error: type=${e.type} status=${e.response?.statusCode} data=${e.response?.data}');
     final status = e.response?.statusCode;
 
     // Wrong driver id / password.
@@ -115,11 +141,12 @@ class AuthApi {
       );
     }
 
-    // No / poor connectivity.
+    // No / poor connectivity or SSL failure.
     if (e.type == DioExceptionType.connectionError ||
         e.type == DioExceptionType.connectionTimeout ||
         e.type == DioExceptionType.receiveTimeout ||
-        e.type == DioExceptionType.sendTimeout) {
+        e.type == DioExceptionType.sendTimeout ||
+        e.type == DioExceptionType.badCertificate) {
       return const AppException(
         message: 'Network error. Please check your connection.',
       );
