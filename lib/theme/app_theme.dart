@@ -7,6 +7,10 @@ abstract class AppTheme {
 
   static ThemeData get light => ThemeData(
     useMaterial3: true,
+    // Figma uses Poppins. Drop the Poppins .ttf files into assets/fonts and
+    // declare the family in pubspec.yaml for pixel-perfect typography; until
+    // then this falls back to the platform default gracefully.
+    fontFamily: 'Poppins',
     colorScheme: const ColorScheme(
       brightness: Brightness.light,
       primary: AppColors.primary,

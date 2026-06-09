@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
+import '../mock_data/mock_data.dart';
 
+/// Figma driver top bar (nodes 350:1212 / 350:1255 / 354:421): a white bar with
+/// a soft drop shadow, a centred title, an optional back arrow on the left and
+/// the circular "AD" driver avatar on the right.
 class VoyzoAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final bool showProfile;
@@ -12,7 +16,7 @@ class VoyzoAppBar extends StatelessWidget implements PreferredSizeWidget {
   const VoyzoAppBar({
     super.key,
     required this.title,
-    this.showProfile = false,
+    this.showProfile = true,
     this.showBack = true,
     this.actions,
   });
@@ -22,31 +26,26 @@ class VoyzoAppBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       backgroundColor: AppColors.surface,
       surfaceTintColor: Colors.transparent,
-      elevation: 0,
+      elevation: 4,
+      shadowColor: const Color(0x33000000),
+      centerTitle: true,
+      toolbarHeight: 60.h,
+      automaticallyImplyLeading: false,
       leading: showBack
           ? IconButton(
-              icon: Container(
-                width: 36.w,
-                height: 36.h,
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceContainer,
-                  borderRadius: BorderRadius.circular(10.r),
-                ),
-                child: Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  size: 16.sp,
-                  color: AppColors.textPrimary,
-                ),
-              ),
               onPressed: () => context.pop(),
+              icon: Icon(
+                Icons.arrow_back_ios_new_rounded,
+                size: 18.sp,
+                color: AppColors.textPrimary,
+              ),
             )
           : null,
-      automaticallyImplyLeading: false,
       title: Text(
         title,
         style: TextStyle(
           fontSize: 18.sp,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w600,
           color: AppColors.textPrimary,
         ),
       ),
@@ -57,14 +56,14 @@ class VoyzoAppBar extends StatelessWidget implements PreferredSizeWidget {
             child: Padding(
               padding: EdgeInsets.only(right: 16.w),
               child: CircleAvatar(
-                radius: 18.r,
-                backgroundColor: AppColors.primary,
+                radius: 16.r,
+                backgroundColor: AppColors.avatarGrey,
                 child: Text(
-                  'AD',
+                  MockData.driver['initials'] as String,
                   style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary,
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -72,13 +71,9 @@ class VoyzoAppBar extends StatelessWidget implements PreferredSizeWidget {
           ),
         if (actions != null) ...actions!,
       ],
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(1),
-        child: Divider(height: 1, color: AppColors.divider),
-      ),
     );
   }
 
   @override
-  Size get preferredSize => Size.fromHeight(kToolbarHeight + 1.h);
+  Size get preferredSize => Size.fromHeight(60.h);
 }

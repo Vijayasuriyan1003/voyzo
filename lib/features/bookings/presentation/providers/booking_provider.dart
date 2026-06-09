@@ -72,6 +72,31 @@ class BookingNotifier extends StateNotifier<BookingState> {
     state = state.copyWith(bookings: updated);
   }
 
+  void updateExpense(String bookingId, ExpenseModel expense) {
+    final updated = state.bookings.map((b) {
+      if (b.id == bookingId) {
+        return b.copyWith(
+          expenses:
+              b.expenses.map((e) => e.id == expense.id ? expense : e).toList(),
+        );
+      }
+      return b;
+    }).toList();
+    state = state.copyWith(bookings: updated);
+  }
+
+  void removeExpense(String bookingId, String expenseId) {
+    final updated = state.bookings.map((b) {
+      if (b.id == bookingId) {
+        return b.copyWith(
+          expenses: b.expenses.where((e) => e.id != expenseId).toList(),
+        );
+      }
+      return b;
+    }).toList();
+    state = state.copyWith(bookings: updated);
+  }
+
   void endTrip(String bookingId, double endKm) {
     final updated = state.bookings.map((b) {
       if (b.id == bookingId) {
