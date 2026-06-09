@@ -58,6 +58,7 @@ class _HomePageState extends State<HomePage> {
   final dropController = TextEditingController();
 
   String? errorText;
+  String? mobileNoError;
 
   Future<void> pickDateTime() async {
     final DateTime? pickedDate = await showDatePicker(
@@ -83,6 +84,7 @@ class _HomePageState extends State<HomePage> {
   void submitBooking() {
     setState(() {
       errorText = null;
+      mobileNoError = null;
     });
 
     if (bookingFor == null ||
@@ -102,14 +104,25 @@ class _HomePageState extends State<HomePage> {
 
     if (!RegExp(r'^[0-9]{10}$').hasMatch(mobileController.text.trim())) {
       setState(() {
-        errorText = 'Please enter valid 10 digit mobile number';
+        mobileNoError = 'Please enter valid 10 digit mobile number';
       });
       return;
     }
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Booking submitted')));
+    context.push(
+      '/booking_success',
+      extra: {
+        'dateTime': dateTimeController.text.trim(),
+        // 'pickup': pickupController.text.trim(),
+        // 'drop': dropController.text.trim(),
+        // 'mobile': mobileController.text.trim(),
+        // 'guestName': guestNameController.text.trim(),
+        // 'vehicleType': vehicleType ?? '',
+        // 'passengers': passengers ?? '',
+        // 'typeOfUse': typeOfUse ?? '',
+        // 'bookingFor': bookingFor ?? '',
+      },
+    );
   }
 
   InputDecoration fieldDecoration(String hint) {
@@ -218,6 +231,16 @@ class _HomePageState extends State<HomePage> {
                 keyboardType: TextInputType.phone,
                 decoration: fieldDecoration('Mobile No.'),
               ),
+              if (mobileNoError != null) ...[
+                SizedBox(height: 8.h),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    mobileNoError!,
+                    style: TextStyle(color: AppColors.error, fontSize: 13.sp),
+                  ),
+                ),
+              ],
 
               SizedBox(height: 10.h),
 
@@ -358,7 +381,7 @@ class _HomePageState extends State<HomePage> {
         unselectedItemColor: Colors.grey,
         onTap: (index) {
           if (index == 1) {
-            context.push('/booking-history');
+            context.push('/customer_booking-history');
           } else if (index == 2) {
             context.push('/profile');
           }

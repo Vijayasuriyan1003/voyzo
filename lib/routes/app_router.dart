@@ -1,4 +1,6 @@
 import 'package:go_router/go_router.dart';
+import 'package:voyzo/features/auth/presentation/pages/booking_success_page.dart';
+import 'package:voyzo/features/auth/presentation/pages/customer_booking_history_page.dart';
 import 'package:voyzo/features/auth/presentation/pages/customer_login_page.dart';
 import 'package:voyzo/features/auth/presentation/pages/forgot_password_page.dart';
 import 'package:voyzo/features/auth/presentation/pages/info_page1.dart';
@@ -32,13 +34,22 @@ final appRouter = GoRouter(
   initialLocation: '/splash',
   routes: [
     GoRoute(path: '/splash', builder: (context, state) => const SplashScreen()),
-    GoRoute(path: '/info_page1', builder: (context, state) => const InfoPage1()),
-    GoRoute(path: '/info_page2', builder: (context, state) => const InfoPage2()),
+    GoRoute(
+      path: '/info_page1',
+      builder: (context, state) => const InfoPage1(),
+    ),
+    GoRoute(
+      path: '/info_page2',
+      builder: (context, state) => const InfoPage2(),
+    ),
     GoRoute(
       path: '/customer_login',
       builder: (context, state) => const CustomerLoginPage(),
     ),
-    GoRoute(path: '/register', builder: (context, state) => const RegisterPage()),
+    GoRoute(
+      path: '/register',
+      builder: (context, state) => const RegisterPage(),
+    ),
     GoRoute(
       path: '/register_otp',
       builder: (context, state) => RegisterOtpPage(),
@@ -56,12 +67,27 @@ final appRouter = GoRouter(
       path: '/set_new_password',
       builder: (context, state) => const SetNewPasswordPage(),
     ),
-    GoRoute(path: '/otp_login', builder: (context, state) => const OtpLoginPage()),
+    GoRoute(
+      path: '/otp_login',
+      builder: (context, state) => const OtpLoginPage(),
+    ),
     GoRoute(
       path: '/login_otp_verification',
       builder: (context, state) => const LoginOtpVerification(),
     ),
     GoRoute(path: '/home_page', builder: (context, state) => const HomePage()),
+    GoRoute(
+      path: '/booking_success',
+      builder: (context, state) {
+        final data = state.extra as Map<String, String>;
+
+        return BookingSuccessPage(dateTime: data['dateTime'] ?? '');
+      },
+    ),
+    GoRoute(
+      path: '/customer_booking_history',
+      builder: (context, state) => const CustomerBookingHistoryPage(),
+    ),
 
     // ── Driver flow ──────────────────────────────────────────────────────────
     // Login → Booking History → Trip Details (Trip Start); Profile via avatar.
@@ -137,8 +163,14 @@ final appRouter = GoRouter(
       builder: (context, state) =>
           TripCompletedSummaryScreen(bookingId: state.extra as String),
     ),
-    GoRoute(path: '/profile', builder: (context, state) => const ProfileScreen()),
-    GoRoute(path: '/setting', builder: (context, state) => const SettingScreen()),
+    GoRoute(
+      path: '/profile',
+      builder: (context, state) => const ProfileScreen(),
+    ),
+    GoRoute(
+      path: '/setting',
+      builder: (context, state) => const SettingScreen(),
+    ),
     GoRoute(
       path: '/edit-profile',
       builder: (context, state) => const EditProfileScreen(),
