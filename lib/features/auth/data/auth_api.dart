@@ -1,35 +1,106 @@
 import 'package:dio/dio.dart';
 import '../../../../core/network/dio_client.dart';
+import '../../../../core/exceptions/app_exception.dart';
+
+/// Result of a successful driver login.
+class DriverLoginResult {
+  final String userId;
+  final String fullName;
+
+  const DriverLoginResult({required this.userId, required this.fullName});
+}
 
 class AuthApi {
-  Future<Response> register({
-    required String name,
-    required String number,
-    required String email,
-    required String password,
-  }) {
-    return DioClient.dio.post(
-      '/users',
-      data: {
-        'name': name,
-        'mobile no': number,
-        'email': email,
-        'password': password,
-      },
-    );
-  }
+  /// Only users carrying this Frappe role are allowed into the driver app.
+  static const String _driverRole = 'Driver';
 
-  Future<bool> login({required String email, required String password}) async {
-    final response = await DioClient.dio.get('/users');
-
-    final users = response.data as List;
-
-    for (final user in users) {
-      if (user['email'] == email && user['password'] == password) {
-        return true;
-      }
+  /// Authenticates against the Frappe site and verifies the user holds the
+  /// "Driver" role.
+  ///
+  /// Throws an [AppException] with a short, user-friendly message when the
+  /// credentials are wrong or the account is not a driver — the caller surfaces
+  /// `message` directly in a toast.
+  Future<DriverLoginResult> login({
+    required String usr,
+    required String pwd,
+  }) async {
+    // 1) Authenticate. Frappe's login endpoint expects form-encoded fields.
+    Response loginRes;
+    try {
+      loginRes = await DioClient.dio.post(
+        '/api/method/login',
+        data: {'usr': usr, 'pwd': pwd},
+        options: Options(contentType: Headers.formUrlEncodedContentType),
+      );
+    } on DioException catch (e) {
+      throw _loginError(e);
     }
 
-    return false;
+    final fullName = loginRes.data is Map
+        ? (loginRes.data['full_name'] as String? ?? '')
+        : '';
+
+    // 2) Resolve the actual logged-in user id (handles email vs username).
+    final userId = await _loggedInUser();
+
+    // 3) Gate on the Driver role.
+    final roles = await _rolesFor(userId);
+    if (!roles.contains(_driverRole)) {
+      DioClient.cookieStore.clear(); // drop the non-driver session
+      throw const AppException(
+        message: 'Access denied. This app is for drivers only.',
+        code: 403,
+      );
+    }
+
+    return DriverLoginResult(userId: userId, fullName: fullName);
+  }
+
+  Future<String> _loggedInUser() async {
+    final res = await DioClient.dio.get(
+      '/api/method/frappe.auth.get_logged_user',
+    );
+    return res.data['message'] as String;
+  }
+
+  Future<List<String>> _rolesFor(String user) async {
+    final res = await DioClient.dio.get(
+      '/api/resource/User/${Uri.encodeComponent(user)}',
+    );
+    final data = res.data['data'] as Map<String, dynamic>;
+    final roles = (data['roles'] as List?) ?? const [];
+    return roles
+        .map((r) => (r as Map)['role'] as String)
+        .toList(growable: false);
+  }
+
+  AppException _loginError(DioException e) {
+    final status = e.response?.statusCode;
+
+    // Wrong driver id / password.
+    if (status == 401) {
+      return const AppException(
+        message: 'Invalid Driver ID or password',
+        code: 401,
+      );
+    }
+
+    // No / poor connectivity.
+    if (e.type == DioExceptionType.connectionError ||
+        e.type == DioExceptionType.connectionTimeout ||
+        e.type == DioExceptionType.receiveTimeout ||
+        e.type == DioExceptionType.sendTimeout) {
+      return const AppException(
+        message: 'Network error. Please check your connection.',
+      );
+    }
+
+    final data = e.response?.data;
+    final serverMsg =
+        (data is Map && data['message'] is String) ? data['message'] as String : null;
+    return AppException(
+      message: serverMsg ?? 'Login failed. Please try again.',
+      code: status,
+    );
   }
 }

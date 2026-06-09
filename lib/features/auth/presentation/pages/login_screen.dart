@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/exceptions/app_exception.dart';
 import '../../../../shared/providers/auth_provider.dart';
+import '../../../../shared/widgets/app_toast.dart';
+import '../../data/auth_api.dart';
 
 /// Figma "Driver Login" (node 350:1023) — a clean white screen with the
 /// "Driver Login" title, two rounded input fields (email id, Password) and an
@@ -18,6 +21,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _authApi = AuthApi();
   bool _obscure = true;
   bool _isLoading = false;
 
@@ -29,11 +33,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _login() async {
+    final usr = _emailController.text.trim();
+    final pwd = _passwordController.text;
+    if (usr.isEmpty || pwd.isEmpty) {
+      showToast(context, 'Please enter your Driver ID and password',
+          isError: true);
+      return;
+    }
+
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 900));
-    if (mounted) {
+    try {
+      await _authApi.login(usr: usr, pwd: pwd);
+      if (!mounted) return;
       ref.read(isLoggedInProvider.notifier).state = true;
       context.go('/booking-history');
+    } on AppException catch (e) {
+      if (mounted) showToast(context, e.message, isError: true);
+    } catch (_) {
+      if (mounted) {
+        showToast(context, 'Something went wrong. Please try again.',
+            isError: true);
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -59,7 +81,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 SizedBox(height: 56.h),
                 _Field(
                   controller: _emailController,
-                  hint: 'email id',
+                  hint: 'Email / Driver ID',
                   icon: Icons.mail_outline_rounded,
                   keyboardType: TextInputType.emailAddress,
                 ),
