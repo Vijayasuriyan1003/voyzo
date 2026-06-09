@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:voyzo/core/network/dio_client.dart';
 import 'package:voyzo/features/auth/data/auth_api.dart';
 
 class CustomerLoginPage extends StatefulWidget {
@@ -29,20 +28,14 @@ class _CustomerLoginPageState extends State<CustomerLoginPage> {
     if (!_formKey.currentState!.validate()) return;
 
     try {
-      final success = await authApi.login(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
+      await authApi.login(
+        usr: _emailController.text.trim(),
+        pwd: _passwordController.text.trim(),
       );
 
       if (!mounted) return;
 
-      if (success) {
-        context.go('/home_page');
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Invalid email or password')),
-        );
-      }
+      context.go('/home_page');
     } catch (e) {
       print("LOGIN ERROR: $e");
 

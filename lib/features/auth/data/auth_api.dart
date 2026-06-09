@@ -74,6 +74,36 @@ class AuthApi {
         .toList(growable: false);
   }
 
+  Future<Response> register({
+    required String name,
+    required String number,
+    required String email,
+    required String password,
+  }) async {
+    try {
+      return await DioClient.dio.post(
+        '/api/method/frappe.client.save',
+        data: {
+          'doc': {
+            'doctype': 'User',
+            'first_name': name,
+            'mobile_no': number,
+            'email': email,
+            'new_password': password,
+            'send_welcome_email': 0,
+          },
+        },
+      );
+    } on DioException catch (e) {
+      final status = e.response?.statusCode;
+      final data = e.response?.data;
+      final msg = (data is Map && data['message'] is String)
+          ? data['message'] as String
+          : 'Registration failed. Please try again.';
+      throw AppException(message: msg, code: status);
+    }
+  }
+
   AppException _loginError(DioException e) {
     final status = e.response?.statusCode;
 
