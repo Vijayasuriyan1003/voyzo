@@ -46,7 +46,7 @@ class _SplashScreenState extends State<SplashScreen>
 
     if (!mounted) return;
 
-    context.go('/info_page1');
+    context.go('/info_page');
   }
 
   @override
