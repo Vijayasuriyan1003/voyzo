@@ -1,14 +1,19 @@
 import 'package:go_router/go_router.dart';
 import 'package:voyzo/features/auth/presentation/pages/booking_success_page.dart';
+import 'package:voyzo/features/auth/presentation/pages/cancel_booking_page.dart';
+import 'package:voyzo/features/auth/presentation/pages/customer_booking_details_page.dart';
 import 'package:voyzo/features/auth/presentation/pages/customer_booking_history_page.dart';
 import 'package:voyzo/features/auth/presentation/pages/customer_login_page.dart';
+import 'package:voyzo/features/auth/presentation/pages/customer_profile_page.dart';
 import 'package:voyzo/features/auth/presentation/pages/forgot_password_page.dart';
-import 'package:voyzo/features/auth/presentation/pages/info_page1.dart';
-import 'package:voyzo/features/auth/presentation/pages/info_page2.dart';
+import 'package:voyzo/features/auth/presentation/pages/info_page.dart';
 import 'package:voyzo/features/auth/presentation/pages/login_otp_verification.dart';
 import 'package:voyzo/features/auth/presentation/pages/otp_login_page.dart';
+import 'package:voyzo/features/auth/presentation/pages/payment_options_page.dart';
+import 'package:voyzo/features/auth/presentation/pages/payment_page.dart';
 import 'package:voyzo/features/auth/presentation/pages/register_otp_page.dart';
 import 'package:voyzo/features/auth/presentation/pages/register_screen.dart';
+import 'package:voyzo/features/auth/presentation/pages/review_page.dart';
 import 'package:voyzo/features/auth/presentation/pages/set_new_password_page.dart';
 import 'package:voyzo/features/auth/presentation/pages/splash_screen.dart';
 import 'package:voyzo/features/auth/presentation/pages/forgot_otp_page.dart';
@@ -34,14 +39,7 @@ final appRouter = GoRouter(
   initialLocation: '/splash',
   routes: [
     GoRoute(path: '/splash', builder: (context, state) => const SplashScreen()),
-    GoRoute(
-      path: '/info_page1',
-      builder: (context, state) => const InfoPage1(),
-    ),
-    GoRoute(
-      path: '/info_page2',
-      builder: (context, state) => const InfoPage2(),
-    ),
+    GoRoute(path: '/info_page', builder: (context, state) => const InfoPage()),
     GoRoute(
       path: '/customer_login',
       builder: (context, state) => const CustomerLoginPage(),
@@ -77,6 +75,10 @@ final appRouter = GoRouter(
     ),
     GoRoute(path: '/home_page', builder: (context, state) => const HomePage()),
     GoRoute(
+      path: '/customer_profile',
+      builder: (context, state) => const CustomerProfilePage(),
+    ),
+    GoRoute(
       path: '/booking_success',
       builder: (context, state) {
         final data = state.extra as Map<String, String>;
@@ -87,6 +89,30 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/customer_booking_history',
       builder: (context, state) => const CustomerBookingHistoryPage(),
+    ),
+    GoRoute(
+      path: '/customer_booking_details',
+      builder: (context, state) {
+        final data = state.extra as Map<String, String>?;
+
+        return CustomerBookingDetailsPage(status: data?['status'] ?? 'pending');
+      },
+    ),
+    GoRoute(
+      path: '/cancel_booking',
+      builder: (context, state) => const CancelBookingPage(),
+    ),
+    GoRoute(
+      path: '/payment_details',
+      builder: (context, state) => const PaymentPage(),
+    ),
+    GoRoute(
+      path: '/payment-options',
+      builder: (context, state) => const PaymentOptionsPage(),
+    ),
+    GoRoute(
+      path: '/review_page',
+      builder: (context, state) => const ReviewPage(),
     ),
 
     // ── Driver flow ──────────────────────────────────────────────────────────

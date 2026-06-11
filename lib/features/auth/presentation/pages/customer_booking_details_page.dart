@@ -1,155 +1,375 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
+import 'package:voyzo/features/auth/widgets/customer_bottom_navbar.dart';
+import 'package:voyzo/features/auth/widgets/driver_details_card.dart';
+import 'package:voyzo/features/auth/widgets/otp_card.dart';
+
 import '../../../../core/constants/app_colors.dart';
 
-class CustomerBookingDetailsPage extends StatelessWidget {
+class CustomerBookingDetailsPage extends StatefulWidget {
   final String status;
 
   const CustomerBookingDetailsPage({super.key, required this.status});
 
-  Color get statusColor {
-    if (status == 'completed') return Colors.green;
-    if (status == 'cancelled') return Colors.red;
-    return AppColors.primary;
+  @override
+  State<CustomerBookingDetailsPage> createState() =>
+      _CustomerBookingDetailsPageState();
+}
+
+class _CustomerBookingDetailsPageState
+    extends State<CustomerBookingDetailsPage> {
+  bool isLoading = true;
+  var startOtp;
+  var endOtp;
+
+  String driverName = '';
+  String phoneNumber = '';
+  String vehicleNumber = '';
+  String dutyType = '';
+
+  @override
+  void initState() {
+    super.initState();
+    fetchBookingDetails();
   }
 
-  String get title {
-    if (status == 'completed') return 'Booking Completed';
-    if (status == 'cancelled') return 'Booking Cancelled';
+  Future<void> fetchBookingDetails() async {
+    await Future.delayed(const Duration(milliseconds: 800));
+
+    setState(() {
+      startOtp = '1234';
+      endOtp = '6789';
+      driverName = 'Ramesh Jain';
+      phoneNumber = '+91 8928262841';
+      vehicleNumber = 'RJ19CH7897';
+      dutyType = '300 KM Per Day';
+      isLoading = false;
+    });
+  }
+
+  Color get statusColor {
+    if (widget.status == 'completed') return AppColors.statusCompleted;
+    if (widget.status == 'cancelled') return AppColors.statusCancelled;
+    if (widget.status == 'upcoming') return AppColors.statusUpcoming;
+    return AppColors.statusPending;
+  }
+
+  String get statusText {
+    if (widget.status == 'upcoming') return 'Booking Upcoming';
+    if (widget.status == 'completed') return 'Booking Completed';
+    if (widget.status == 'cancelled') return 'Booking Cancelled';
     return 'Booking Pending';
   }
 
   @override
   Widget build(BuildContext context) {
-    final showDriver = status == 'completed' || status == 'pending';
+    final isPending = widget.status == 'pending';
+    final isUpcoming = widget.status == 'upcoming';
+    final isCompleted = widget.status == 'completed';
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Booking Details'), centerTitle: true),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(18.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: TextStyle(
-                color: statusColor,
-                fontSize: 18.sp,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 14.h),
-            card(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  row('Guest Name', 'Raj Pandey'),
-                  row('Booking ID', '#458216'),
-                  row('Vehicle Type', 'SUV'),
-                  row('Amount Paid', 'Rs. 5000'),
-                  row('Start Date', '28-10-2025'),
-                  row('End Date', '29-10-2025'),
-                ],
-              ),
-            ),
-            SizedBox(height: 14.h),
-            card(
-              child: Column(
-                children: [
-                  locationRow(
-                    'Pickup Location',
-                    'Jaipur International Airport Terminal,\nAirport Road, Jaipur, Rajasthan',
-                  ),
-                  SizedBox(height: 12.h),
-                  locationRow(
-                    'Drop Location',
-                    'Jaipur International Airport Terminal,\nAirport Road, Jaipur, Rajasthan',
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 14.h),
-            card(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  row('Trip Type', 'Transfer'),
-                  row('Sub Trip Type', 'One way'),
-                ],
-              ),
-            ),
-            if (showDriver) ...[
-              SizedBox(height: 14.h),
-              Text(
-                'Driver Details',
-                style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 10.h),
-              card(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    row('Driver Name', 'Suresh Jain'),
-                    row('Mobile Number', '+91 9876543210'),
-                    row('Vehicle Number', 'RJ 14 AB 1234'),
-                    row('Car Type', 'SUV'),
-                  ],
+      backgroundColor: AppColors.background,
+
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 1,
+        centerTitle: true,
+        title: Text(
+          'Booking Details',
+          style: TextStyle(
+            fontSize: 18.sp,
+            fontWeight: FontWeight.w700,
+            color: Colors.black,
+          ),
+        ),
+        actions: [
+          InkWell(
+            borderRadius: BorderRadius.circular(20.r),
+            onTap: () {
+              context.go('/customer_profile');
+            },
+            child: CircleAvatar(
+              radius: 14.r,
+              backgroundColor: AppColors.primary.withOpacity(0.2),
+              child: Text(
+                'RK',
+                style: TextStyle(
+                  fontSize: 10.sp,
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-            ],
-          ],
-        ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 1,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.directions_car),
-            label: 'Home',
+            ),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.assignment),
-            label: 'Bookings',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'Profile',
-          ),
+          SizedBox(width: 15.w),
         ],
       ),
+
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.all(18.w),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              'Guest Details',
+                              style: TextStyle(
+                                fontSize: 18.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const Spacer(),
+                            Text(
+                              statusText,
+                              style: TextStyle(
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.bold,
+                                color: statusColor,
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        SizedBox(height: 14.h),
+
+                        _card(
+                          child: Column(
+                            children: [
+                              Row(
+                                children: [
+                                  _infoItem('Guest Name', 'Raj Pandey'),
+                                  _infoItem(
+                                    'Booking ID',
+                                    '#456789',
+                                    alignRight: true,
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 14.h),
+                              Row(
+                                children: [
+                                  _infoItem('Vehicle Type', 'SUV'),
+                                  _infoItem(
+                                    'Est. Amount',
+                                    'INR. 12,600',
+                                    alignRight: true,
+                                    valueColor: AppColors.primary,
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        if (isUpcoming) ...[
+                          SizedBox(height: 14.h),
+
+                          OtpCard(startOtp: startOtp, endOtp: endOtp),
+                        ],
+
+                        SizedBox(height: 14.h),
+
+                        _card(
+                          child: Row(
+                            children: [
+                              _infoItem('Start', '28-10-2025\n09:11:37'),
+                              Expanded(
+                                child: Center(
+                                  child: Icon(
+                                    Icons.calendar_month,
+                                    color: AppColors.primary,
+                                    size: 24.sp,
+                                  ),
+                                ),
+                              ),
+                              _infoItem(
+                                'End',
+                                '28-10-2025\n19:11:37',
+                                alignRight: true,
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        SizedBox(height: 14.h),
+
+                        _card(
+                          child: Column(
+                            children: [
+                              _locationItem(
+                                iconColor: AppColors.primary,
+                                title: 'Pick up Location',
+                                address:
+                                    'Jaipur International Airport Terminal,\nSanganer Airport Area, Jaipur, Rajasthan,\n302041',
+                              ),
+                              SizedBox(height: 16.h),
+                              _locationItem(
+                                iconColor: Colors.grey,
+                                title: 'Drop Off Location',
+                                address:
+                                    'Jaipur International Airport Terminal,\nSanganer Airport Area, Jaipur, Rajasthan,\n302041',
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        if (isUpcoming || isCompleted) ...[
+                          SizedBox(height: 14.h),
+
+                          _card(
+                            child: Row(
+                              children: [
+                                _infoItem('Trip Type', 'Transfer'),
+                                _infoItem(
+                                  'Sub Trip Type',
+                                  'One Way',
+                                  alignRight: true,
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          SizedBox(height: 20.h),
+
+                          Text(
+                            'Driver Details',
+                            style: TextStyle(
+                              fontSize: 18.sp,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+
+                          SizedBox(height: 12.h),
+
+                          DriverDetailsCard(
+                            driverName: driverName,
+                            phoneNumber: phoneNumber,
+                            vehicleNumber: vehicleNumber,
+                            dutyType: dutyType,
+                            onViewProfile: () {},
+                          ),
+                        ],
+
+                        SizedBox(
+                          height: isPending || isUpcoming ? 140.h : 20.h,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                if (isPending || isUpcoming)
+                  Container(
+                    color: AppColors.background,
+                    padding: EdgeInsets.fromLTRB(18.w, 10.h, 18.w, 18.h),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50.h,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              context.push('/payment_details');
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30.r),
+                              ),
+                            ),
+                            child: Text(
+                              'Pay Now',
+                              style: TextStyle(
+                                fontSize: 16.sp,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        SizedBox(height: 12.h),
+
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50.h,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              context.push('/cancel_booking');
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.grey.shade400,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30.r),
+                              ),
+                            ),
+                            child: Text(
+                              'Cancel Booking',
+                              style: TextStyle(
+                                fontSize: 16.sp,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+
+      bottomNavigationBar: const CustomerBottomNavBar(currentIndex: 1),
     );
   }
 
-  Widget card({required Widget child}) {
+  Widget _card({required Widget child}) {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(14.w),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14.r),
-        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(16.r),
       ),
       child: child,
     );
   }
 
-  Widget row(String left, String right) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 8.h),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _infoItem(
+    String title,
+    String value, {
+    bool alignRight = false,
+    Color? valueColor,
+  }) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: alignRight
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
         children: [
           Text(
-            left,
-            style: TextStyle(fontSize: 12.sp, color: Colors.grey),
+            title,
+            style: TextStyle(fontSize: 11.sp, color: AppColors.textSecondary),
           ),
-          Flexible(
-            child: Text(
-              right,
-              textAlign: TextAlign.right,
-              style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w600),
+          SizedBox(height: 4.h),
+          Text(
+            value,
+            textAlign: alignRight ? TextAlign.right : TextAlign.left,
+            style: TextStyle(
+              fontSize: 12.sp,
+              fontWeight: FontWeight.bold,
+              color: valueColor ?? AppColors.textPrimary,
+              height: 1.3,
             ),
           ),
         ],
@@ -157,11 +377,15 @@ class CustomerBookingDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget locationRow(String title, String address) {
+  Widget _locationItem({
+    required Color iconColor,
+    required String title,
+    required String address,
+  }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(Icons.location_on, color: AppColors.primary, size: 22.sp),
+        Icon(Icons.location_on_outlined, color: iconColor, size: 22.sp),
         SizedBox(width: 8.w),
         Expanded(
           child: Column(
@@ -169,10 +393,22 @@ class CustomerBookingDetailsPage extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 11.sp,
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               SizedBox(height: 4.h),
-              Text(address, style: TextStyle(fontSize: 11.sp)),
+              Text(
+                address,
+                style: TextStyle(
+                  fontSize: 11.sp,
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w600,
+                  height: 1.4,
+                ),
+              ),
             ],
           ),
         ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:voyzo/features/auth/widgets/customer_bottom_navbar.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../shared/widgets/app_button.dart';
 
@@ -15,7 +16,28 @@ class BookingSuccessPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Booking Page'),
         centerTitle: true,
-        automaticallyImplyLeading: false,
+        actions: [
+          InkWell(
+            borderRadius: BorderRadius.circular(20.r),
+            onTap: () {
+              context.go('/customer_profile');
+            },
+            child: CircleAvatar(
+              radius: 14.r,
+              backgroundColor: AppColors.primary.withOpacity(0.2),
+              child: Text(
+                'RK',
+                style: TextStyle(
+                  fontSize: 10.sp,
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+
+          SizedBox(width: 15.w),
+        ],
       ),
       body: Center(
         child: Padding(
@@ -49,8 +71,8 @@ class BookingSuccessPage extends StatelessWidget {
               AppButton(
                 label: 'View Trip Details',
                 onTap: () {
-                  context.push(
-                    '/booking_details',
+                  context.go(
+                    '/customer_booking_details',
                     extra: {'status': 'pending'},
                   );
                 },
@@ -64,7 +86,7 @@ class BookingSuccessPage extends StatelessWidget {
                     backgroundColor: Colors.grey.shade300,
                   ),
                   onPressed: () {
-                    context.go('/home_page');
+                    context.push('/cancel_booking');
                   },
                   child: const Text('Cancel Booking'),
                 ),
@@ -73,30 +95,8 @@ class BookingSuccessPage extends StatelessWidget {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 1,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: Colors.grey,
-        onTap: (index) {
-          if (index == 0) context.go('/home_page');
-          if (index == 1) context.go('/customer_booking_history');
-          if (index == 2) context.go('/profile');
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.directions_car),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.assignment),
-            label: 'Bookings',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'Profile',
-          ),
-        ],
-      ),
+
+      bottomNavigationBar: const CustomerBottomNavBar(currentIndex: 1),
     );
   }
 }

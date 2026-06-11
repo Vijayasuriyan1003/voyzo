@@ -1,37 +1,8 @@
-// import 'package:flutter/material.dart';
-// import 'package:flutter_riverpod/flutter_riverpod.dart';
-// import 'package:voyzo/core/constants/app_constants.dart';
-
-// class HomePage extends ConsumerWidget {
-//   const HomePage({super.key});
-
-//   @override
-//   Widget build(BuildContext context, WidgetRef ref) {
-//     return Scaffold(
-//       appBar: AppBar(title: const Text(AppConstants.appName)),
-//       body: const Center(
-//         child: Column(
-//           mainAxisAlignment: MainAxisAlignment.center,
-//           children: [
-//             Icon(Icons.rocket_launch, size: 64),
-//             SizedBox(height: 16),
-//             Text(
-//               'Welcome to Voyzo',
-//               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-//             ),
-//             SizedBox(height: 8),
-//             Text('Clean Architecture • Riverpod • GoRouter'),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
-
+import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:dropdown_button2/dropdown_button2.dart';
+import 'package:voyzo/features/auth/widgets/customer_bottom_navbar.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../shared/widgets/app_button.dart';
@@ -45,6 +16,9 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   bool isLocal = true;
+  bool isAnimating = false;
+
+  late final PageController pageController;
 
   String? bookingFor;
   String? vehicleType;
@@ -59,6 +33,12 @@ class _HomePageState extends State<HomePage> {
 
   String? errorText;
   String? mobileNoError;
+
+  @override
+  void initState() {
+    super.initState();
+    pageController = PageController(initialPage: 0);
+  }
 
   Future<void> pickDateTime() async {
     final DateTime? pickedDate = await showDatePicker(
@@ -111,17 +91,7 @@ class _HomePageState extends State<HomePage> {
 
     context.push(
       '/booking_success',
-      extra: {
-        'dateTime': dateTimeController.text.trim(),
-        // 'pickup': pickupController.text.trim(),
-        // 'drop': dropController.text.trim(),
-        // 'mobile': mobileController.text.trim(),
-        // 'guestName': guestNameController.text.trim(),
-        // 'vehicleType': vehicleType ?? '',
-        // 'passengers': passengers ?? '',
-        // 'typeOfUse': typeOfUse ?? '',
-        // 'bookingFor': bookingFor ?? '',
-      },
+      extra: {'dateTime': dateTimeController.text.trim()},
     );
   }
 
@@ -132,8 +102,29 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Future<void> changeTripType(bool local) async {
+    if (isAnimating) return;
+    if (isLocal == local) return;
+
+    setState(() {
+      isAnimating = true;
+    });
+
+    await pageController.animateToPage(
+      local ? 0 : 1,
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeInOutCubic,
+    );
+
+    setState(() {
+      isLocal = local;
+      isAnimating = false;
+    });
+  }
+
   @override
   void dispose() {
+    pageController.dispose();
     guestNameController.dispose();
     mobileController.dispose();
     dateTimeController.dispose();
@@ -147,12 +138,38 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       resizeToAvoidBottomInset: true,
 
+      appBar: AppBar(
+        title: const Text('Booking'),
+        centerTitle: true,
+        actions: [
+          InkWell(
+            borderRadius: BorderRadius.circular(20.r),
+            onTap: () {
+              context.go('/customer_profile');
+            },
+            child: CircleAvatar(
+              radius: 14.r,
+              backgroundColor: AppColors.primary.withOpacity(0.2),
+              child: Text(
+                'RK',
+                style: TextStyle(
+                  fontSize: 10.sp,
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          SizedBox(width: 5.w),
+        ],
+      ),
+
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.all(18.w),
           child: Column(
             children: [
-              SizedBox(height: 20.h),
+              SizedBox(height: 5.h),
 
               Text(
                 'Welcome {User Name},\nBook your Trip.',
@@ -170,237 +187,235 @@ class _HomePageState extends State<HomePage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   choiceButton('Local', isLocal, () {
-                    setState(() => isLocal = true);
+                    changeTripType(true);
                   }),
                   SizedBox(width: 15.w),
                   choiceButton('Outstation', !isLocal, () {
-                    setState(() => isLocal = false);
+                    changeTripType(false);
                   }),
                 ],
               ),
 
               SizedBox(height: 20.h),
 
-              DropdownButtonFormField2<String>(
-                valueListenable: ValueNotifier(bookingFor),
-                isExpanded: true,
-
-                decoration: const InputDecoration(
-                  hintText: 'Book for Yourself',
-                ),
-
-                dropdownStyleData: DropdownStyleData(
-                  width: 355.w,
-                  offset: const Offset(0, -4),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                ),
-
-                menuItemStyleData: MenuItemStyleData(
-                  padding: EdgeInsets.symmetric(horizontal: 16.w),
-                ),
-
-                items: const [
-                  DropdownItem(value: 'self', child: Text('Book for Yourself')),
-                  DropdownItem(
-                    value: 'someone',
-                    child: Text('Book for Someone Else'),
-                  ),
-                ],
-
-                onChanged: (value) {
-                  setState(() {
-                    bookingFor = value;
-                  });
-                },
-              ),
-
-              SizedBox(height: 10.h),
-
-              TextField(
-                controller: guestNameController,
-                decoration: fieldDecoration('Guest Name'),
-              ),
-
-              SizedBox(height: 10.h),
-
-              TextField(
-                controller: mobileController,
-                keyboardType: TextInputType.phone,
-                decoration: fieldDecoration('Mobile No.'),
-              ),
-              if (mobileNoError != null) ...[
-                SizedBox(height: 8.h),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    mobileNoError!,
-                    style: TextStyle(color: AppColors.error, fontSize: 13.sp),
-                  ),
-                ),
-              ],
-
-              SizedBox(height: 10.h),
-
-              DropdownButtonFormField2<String>(
-                valueListenable: ValueNotifier(vehicleType),
-                decoration: const InputDecoration(hintText: 'Vehicle Type'),
-                dropdownStyleData: DropdownStyleData(
-                  width: 355.w,
-                  offset: const Offset(0, -4),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                ),
-
-                menuItemStyleData: MenuItemStyleData(
-                  padding: EdgeInsets.symmetric(horizontal: 16.w),
-                ),
-                items: const [
-                  DropdownItem(value: 'sedan', child: Text('Sedan')),
-                  DropdownItem(value: 'suv', child: Text('SUV')),
-                  DropdownItem(value: 'hatchback', child: Text('Hatchback')),
-                ],
-                onChanged: (value) {
-                  setState(() => vehicleType = value);
-                },
-              ),
-
-              SizedBox(height: 10.h),
-
-              DropdownButtonFormField2<String>(
-                valueListenable: ValueNotifier(passengers),
-                decoration: const InputDecoration(
-                  hintText: 'No. of Passengers',
-                ),
-                dropdownStyleData: DropdownStyleData(
-                  width: 355.w,
-                  offset: const Offset(0, -4),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                ),
-
-                menuItemStyleData: MenuItemStyleData(
-                  padding: EdgeInsets.symmetric(horizontal: 16.w),
-                ),
-                items: const [
-                  DropdownItem(value: '1', child: Text('1 Passenger')),
-                  DropdownItem(value: '2', child: Text('2 Passengers')),
-                  DropdownItem(value: '3', child: Text('3 Passengers')),
-                  DropdownItem(value: '4', child: Text('4 Passengers')),
-                ],
-                onChanged: (value) {
-                  setState(() => passengers = value);
-                },
-              ),
-
-              SizedBox(height: 10.h),
-
-              TextField(
-                controller: dateTimeController,
-                readOnly: true,
-                onTap: pickDateTime,
-                decoration: fieldDecoration(
-                  'Date & Time',
-                ).copyWith(suffixIcon: const Icon(Icons.calendar_month)),
-              ),
-
-              SizedBox(height: 10.h),
-
-              TextField(
-                controller: pickupController,
-                decoration: fieldDecoration('Pickup Location'),
-              ),
-
-              SizedBox(height: 10.h),
-
-              TextField(
-                controller: dropController,
-                decoration: fieldDecoration(
-                  isLocal ? 'Drop Location' : 'Destination',
+              SizedBox(
+                height: 650.h,
+                child: PageView(
+                  controller: pageController,
+                  physics: const NeverScrollableScrollPhysics(),
+                  onPageChanged: (index) {},
+                  children: [
+                    _bookingForm(local: true),
+                    _bookingForm(local: false),
+                  ],
                 ),
               ),
-
-              SizedBox(height: 10.h),
-
-              DropdownButtonFormField2<String>(
-                valueListenable: ValueNotifier(typeOfUse),
-                isExpanded: true,
-                decoration: const InputDecoration(hintText: 'Type of use'),
-                dropdownStyleData: DropdownStyleData(
-                  width: 355.w,
-                  offset: const Offset(0, -4),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                ),
-
-                menuItemStyleData: MenuItemStyleData(
-                  padding: EdgeInsets.symmetric(horizontal: 16.w),
-                ),
-                items: const [
-                  DropdownItem(value: 'transfer', child: Text('Transfer')),
-                  DropdownItem(value: '8hr', child: Text('8 hrs/km')),
-                  DropdownItem(value: '12hr', child: Text('12 hrs/km')),
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    typeOfUse = value;
-                  });
-                },
-              ),
-
-              if (errorText != null) ...[
-                SizedBox(height: 8.h),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    errorText!,
-                    style: TextStyle(color: AppColors.error, fontSize: 13.sp),
-                  ),
-                ),
-              ],
-
-              SizedBox(height: 20.h),
-
-              AppButton(label: 'Submit', onTap: submitBooking),
             ],
           ),
         ),
       ),
 
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 0,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: Colors.grey,
-        onTap: (index) {
-          if (index == 1) {
-            context.push('/customer_booking-history');
-          } else if (index == 2) {
-            context.push('/profile');
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.directions_car),
-            label: 'Home',
+      bottomNavigationBar: const CustomerBottomNavBar(currentIndex: 0),
+    );
+  }
+
+  Widget _bookingForm({required bool local}) {
+    return Column(
+      children: [
+        DropdownButtonFormField2<String>(
+          valueListenable: ValueNotifier(bookingFor),
+          isExpanded: true,
+          decoration: const InputDecoration(hintText: 'Book for Yourself'),
+          dropdownStyleData: DropdownStyleData(
+            width: 355.w,
+            offset: const Offset(0, -4),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12.r),
+            ),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.assignment),
-            label: 'Bookings',
+          menuItemStyleData: MenuItemStyleData(
+            padding: EdgeInsets.symmetric(horizontal: 16.w),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'Profile',
+          items: [
+            DropdownItem(
+              value: 'self',
+              child: Text(
+                'Book for Yourself',
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black,
+                ),
+              ),
+            ),
+            DropdownItem(
+              value: 'someone',
+              child: Text(
+                'Book for Someone Else',
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black,
+                ),
+              ),
+            ),
+          ],
+          onChanged: (value) {
+            setState(() {
+              bookingFor = value;
+            });
+          },
+        ),
+
+        SizedBox(height: 10.h),
+
+        TextField(
+          controller: guestNameController,
+          decoration: fieldDecoration('Enter Name'),
+        ),
+
+        SizedBox(height: 10.h),
+
+        TextField(
+          controller: mobileController,
+          keyboardType: TextInputType.phone,
+          decoration: fieldDecoration('Mobile No.'),
+        ),
+
+        if (mobileNoError != null) ...[
+          SizedBox(height: 8.h),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              mobileNoError!,
+              style: TextStyle(color: AppColors.error, fontSize: 13.sp),
+            ),
           ),
         ],
-      ),
+
+        SizedBox(height: 10.h),
+
+        DropdownButtonFormField2<String>(
+          valueListenable: ValueNotifier(vehicleType),
+          decoration: const InputDecoration(hintText: 'Vehicle Type'),
+          dropdownStyleData: DropdownStyleData(
+            width: 355.w,
+            offset: const Offset(0, -4),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+          ),
+          menuItemStyleData: MenuItemStyleData(
+            padding: EdgeInsets.symmetric(horizontal: 16.w),
+          ),
+          items: const [
+            DropdownItem(value: 'sedan', child: Text('Sedan')),
+            DropdownItem(value: 'suv', child: Text('SUV')),
+            DropdownItem(value: 'hatchback', child: Text('Hatchback')),
+          ],
+          onChanged: (value) {
+            setState(() => vehicleType = value);
+          },
+        ),
+
+        SizedBox(height: 10.h),
+
+        DropdownButtonFormField2<String>(
+          valueListenable: ValueNotifier(passengers),
+          decoration: const InputDecoration(hintText: 'No. of Passengers'),
+          dropdownStyleData: DropdownStyleData(
+            width: 355.w,
+            offset: const Offset(0, -4),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+          ),
+          menuItemStyleData: MenuItemStyleData(
+            padding: EdgeInsets.symmetric(horizontal: 16.w),
+          ),
+          items: const [
+            DropdownItem(value: '1', child: Text('1 Passenger')),
+            DropdownItem(value: '2', child: Text('2 Passengers')),
+            DropdownItem(value: '3', child: Text('3 Passengers')),
+            DropdownItem(value: '4', child: Text('4 Passengers')),
+          ],
+          onChanged: (value) {
+            setState(() => passengers = value);
+          },
+        ),
+
+        SizedBox(height: 10.h),
+
+        TextField(
+          controller: dateTimeController,
+          readOnly: true,
+          onTap: pickDateTime,
+          decoration: fieldDecoration(
+            'Date & Time',
+          ).copyWith(suffixIcon: const Icon(Icons.calendar_month)),
+        ),
+
+        SizedBox(height: 10.h),
+
+        TextField(
+          controller: pickupController,
+          decoration: fieldDecoration('Pickup Location'),
+        ),
+
+        SizedBox(height: 10.h),
+
+        TextField(
+          controller: dropController,
+          decoration: fieldDecoration(local ? 'Drop Location' : 'Destination'),
+        ),
+
+        SizedBox(height: 10.h),
+
+        DropdownButtonFormField2<String>(
+          valueListenable: ValueNotifier(typeOfUse),
+          isExpanded: true,
+          decoration: const InputDecoration(hintText: 'Type of use'),
+          dropdownStyleData: DropdownStyleData(
+            width: 355.w,
+            offset: const Offset(0, -4),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+          ),
+          menuItemStyleData: MenuItemStyleData(
+            padding: EdgeInsets.symmetric(horizontal: 16.w),
+          ),
+          items: const [
+            DropdownItem(value: 'transfer', child: Text('Transfer')),
+            DropdownItem(value: '8hr', child: Text('8 hrs/km')),
+            DropdownItem(value: '12hr', child: Text('12 hrs/km')),
+          ],
+          onChanged: (value) {
+            setState(() {
+              typeOfUse = value;
+            });
+          },
+        ),
+
+        if (errorText != null) ...[
+          SizedBox(height: 8.h),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              errorText!,
+              style: TextStyle(color: AppColors.error, fontSize: 13.sp),
+            ),
+          ),
+        ],
+
+        SizedBox(height: 20.h),
+
+        AppButton(label: 'Submit', onTap: submitBooking),
+      ],
     );
   }
 

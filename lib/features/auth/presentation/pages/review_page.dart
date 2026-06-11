@@ -176,6 +176,7 @@ class _ReviewPageState extends State<ReviewPage> {
                       'Driver Rating',
                       style: TextStyle(
                         fontSize: 16.sp,
+
                         fontWeight: FontWeight.w600,
                       ),
                     ),
