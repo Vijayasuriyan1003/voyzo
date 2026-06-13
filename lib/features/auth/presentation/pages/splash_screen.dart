@@ -1,57 +1,51 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
 
-import '../../../../routes/app_router.dart';
+import '../../application/auth_controller.dart';
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
+class _SplashScreenState extends ConsumerState<SplashScreen>
     with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-  late Animation<double> _opacityAnimation;
+  late final AnimationController _ctrl;
+  late final Animation<double> _scale;
+  late final Animation<double> _opacity;
 
   @override
   void initState() {
     super.initState();
 
-    _controller = AnimationController(
+    _ctrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1800),
     );
+    _scale = Tween<double>(begin: 1.0, end: 3.0)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+    _opacity = Tween<double>(begin: 1.0, end: 0.0)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
 
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 3.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
-
-    _opacityAnimation = Tween<double>(
-      begin: 1.0,
-      end: 0.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
-
-    startAnimation();
+    _start();
   }
 
-  Future<void> startAnimation() async {
-    await Future.delayed(const Duration(milliseconds: 800));
-
-    await _controller.forward();
-
-    if (!mounted) return;
-
-    context.go('/info_page1');
+  Future<void> _start() async {
+    // Restore session from secure storage and animate simultaneously.
+    await Future.wait([
+      ref.read(authControllerProvider.notifier).restore(),
+      Future.delayed(const Duration(milliseconds: 800))
+          .then((_) => _ctrl.forward()),
+    ]);
+    // GoRouter's redirect will navigate once auth status is set.
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _ctrl.dispose();
     super.dispose();
   }
 
@@ -60,9 +54,9 @@ class _SplashScreenState extends State<SplashScreen>
     return Scaffold(
       body: Center(
         child: FadeTransition(
-          opacity: _opacityAnimation,
+          opacity: _opacity,
           child: ScaleTransition(
-            scale: _scaleAnimation,
+            scale: _scale,
             child: Image.asset('assets/images/VOYZO_logo.png', width: 220.w),
           ),
         ),

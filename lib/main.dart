@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:voyzo/routes/app_router.dart';
-import 'package:voyzo/theme/app_theme.dart';
+
+import 'routes/app_router.dart';
+import 'theme/app_theme.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,11 +18,13 @@ void main() {
   runApp(const ProviderScope(child: VoyzoApp()));
 }
 
-class VoyzoApp extends StatelessWidget {
+class VoyzoApp extends ConsumerWidget {
   const VoyzoApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(routerProvider);
+
     return ScreenUtilInit(
       designSize: const Size(390, 844),
       minTextAdapt: true,
@@ -32,7 +35,7 @@ class VoyzoApp extends StatelessWidget {
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,
         themeMode: ThemeMode.light,
-        routerConfig: appRouter,
+        routerConfig: router,
       ),
     );
   }

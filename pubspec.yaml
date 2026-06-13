@@ -32,6 +32,10 @@ dependencies:
   freezed_annotation: ^3.0.0
   json_annotation: ^4.9.0
 
+  # Secure storage
+  flutter_secure_storage: ^9.2.4
+  shared_preferences: ^2.3.3
+
   # UI utilities
   flutter_screenutil: ^5.9.3
 

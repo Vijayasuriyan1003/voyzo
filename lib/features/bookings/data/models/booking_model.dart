@@ -1,7 +1,5 @@
 import 'expense_model.dart';
 
-// Figma statuses: On Going, Completed, Cancelled, Draft, Open, Booked, Pending.
-// `active` is rendered as "On Going".
 enum BookingStatus {
   upcoming,
   active,
@@ -13,7 +11,48 @@ enum BookingStatus {
   pending,
 }
 
+extension BookingStatusX on BookingStatus {
+  static BookingStatus fromString(String? s) {
+    switch (s?.toLowerCase()) {
+      case 'upcoming':
+        return BookingStatus.upcoming;
+      case 'active':
+      case 'on going':
+      case 'ongoing':
+        return BookingStatus.active;
+      case 'completed':
+        return BookingStatus.completed;
+      case 'cancelled':
+      case 'canceled':
+        return BookingStatus.cancelled;
+      case 'open':
+        return BookingStatus.open;
+      case 'booked':
+        return BookingStatus.booked;
+      case 'draft':
+        return BookingStatus.draft;
+      case 'pending':
+        return BookingStatus.pending;
+      default:
+        return BookingStatus.upcoming;
+    }
+  }
+}
+
 enum PaymentStatus { pending, paid, partial }
+
+extension PaymentStatusX on PaymentStatus {
+  static PaymentStatus fromString(String? s) {
+    switch (s?.toLowerCase()) {
+      case 'paid':
+        return PaymentStatus.paid;
+      case 'partial':
+        return PaymentStatus.partial;
+      default:
+        return PaymentStatus.pending;
+    }
+  }
+}
 
 class BookingModel {
   final String id;
@@ -29,10 +68,9 @@ class BookingModel {
   final String vehicleNumber;
   final double tripAmount;
   final String bookingType;
-  // Figma trip-detail fields.
-  final String dutyType; // e.g. "300 KM Per Day"
-  final String tripType; // e.g. "Transfer"
-  final String subTripType; // e.g. "One way"
+  final String dutyType;
+  final String tripType;
+  final String subTripType;
   final double gst;
   final String? driverName;
   final String? driverPhone;
@@ -78,11 +116,62 @@ class BookingModel {
   });
 
   double get totalExpenses => expenses.fold(0, (sum, e) => sum + e.amount);
-
   double get totalAmount => tripAmount + totalExpenses + gst;
-
   double? get distanceTravelled =>
       (startKm != null && endKm != null) ? endKm! - startKm! : totalDistanceKm;
+
+  factory BookingModel.fromJson(Map j) {
+    final expenses = (j['expenses'] as List?)
+            ?.map((e) => ExpenseModel.fromJson(e as Map))
+            .toList() ??
+        const [];
+
+    return BookingModel(
+      id: j['name']?.toString() ?? '',
+      bookingCode: j['booking_code']?.toString() ?? j['name']?.toString() ?? '',
+      passengerName: j['passenger_name']?.toString() ?? '',
+      passengerPhone: j['passenger_phone']?.toString() ?? '',
+      pickupLocation: j['pickup_location']?.toString() ?? '',
+      dropLocation: j['drop_location']?.toString() ?? '',
+      scheduledDateTime: j['scheduled_date_time'] != null
+          ? DateTime.tryParse(j['scheduled_date_time'].toString()) ??
+              DateTime.now()
+          : DateTime.now(),
+      endDateTime: j['end_date_time'] != null
+          ? DateTime.tryParse(j['end_date_time'].toString())
+          : null,
+      status: BookingStatusX.fromString(j['status']?.toString()),
+      vehicleInfo: j['vehicle_info']?.toString() ?? '',
+      vehicleNumber: j['vehicle_number']?.toString() ?? '',
+      tripAmount: double.tryParse(j['trip_amount']?.toString() ?? '0') ?? 0,
+      bookingType: j['booking_type']?.toString() ?? '',
+      dutyType: j['duty_type']?.toString() ?? '300 KM Per Day',
+      tripType: j['trip_type']?.toString() ?? 'Transfer',
+      subTripType: j['sub_trip_type']?.toString() ?? 'One way',
+      gst: double.tryParse(j['gst']?.toString() ?? '0') ?? 0,
+      driverName: j['driver_name']?.toString(),
+      driverPhone: j['driver_phone']?.toString(),
+      otp: j['otp']?.toString(),
+      startKm: j['start_km'] != null
+          ? double.tryParse(j['start_km'].toString())
+          : null,
+      endKm:
+          j['end_km'] != null ? double.tryParse(j['end_km'].toString()) : null,
+      startTime: j['start_time'] != null
+          ? DateTime.tryParse(j['start_time'].toString())
+          : null,
+      endTime: j['end_time'] != null
+          ? DateTime.tryParse(j['end_time'].toString())
+          : null,
+      expenses: expenses,
+      paymentStatus:
+          PaymentStatusX.fromString(j['payment_status']?.toString()),
+      driverNotes: j['driver_notes']?.toString(),
+      totalDistanceKm: j['total_distance_km'] != null
+          ? double.tryParse(j['total_distance_km'].toString())
+          : null,
+    );
+  }
 
   BookingModel copyWith({
     BookingStatus? status,
@@ -93,6 +182,7 @@ class BookingModel {
     List<ExpenseModel>? expenses,
     PaymentStatus? paymentStatus,
     String? driverNotes,
+    String? otp,
   }) =>
       BookingModel(
         id: id,
@@ -114,7 +204,7 @@ class BookingModel {
         gst: gst,
         driverName: driverName,
         driverPhone: driverPhone,
-        otp: otp,
+        otp: otp ?? this.otp,
         startKm: startKm ?? this.startKm,
         endKm: endKm ?? this.endKm,
         startTime: startTime ?? this.startTime,

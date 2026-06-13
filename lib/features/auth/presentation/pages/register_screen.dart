@@ -1,27 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:voyzo/core/constants/app_colors.dart';
-import 'package:voyzo/features/auth/data/auth_api.dart';
 
-class RegisterPage extends StatefulWidget {
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/network/api_exception.dart';
+import '../../application/auth_controller.dart';
+
+class RegisterPage extends ConsumerStatefulWidget {
   const RegisterPage({super.key});
 
   @override
-  State<RegisterPage> createState() => _RegisterPageState();
+  ConsumerState<RegisterPage> createState() => _RegisterPageState();
 }
 
-class _RegisterPageState extends State<RegisterPage> {
+class _RegisterPageState extends ConsumerState<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
-
   final _nameController = TextEditingController();
   final _mobileController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  bool isChecked = false;
-  bool isPasswordVisible = false;
-  bool showTermsError = false;
+  bool _isChecked = false;
+  bool _obscure = true;
+  bool _showTermsError = false;
+  bool _isLoading = false;
+
+  // Default role; can be extended to a role-picker UI.
+  static const _defaultRole = 'Customer';
 
   @override
   void dispose() {
@@ -32,38 +38,38 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
-  void openTerms() async {
-    // final Uri url = Uri.parse("https://your-website.com/terms");
-    // await launchUrl(url, mode: LaunchMode.externalApplication);
-  }
-
-  final authApi = AuthApi();
-
-  Future<void> submitRegister() async {
+  Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
-
-    if (!isChecked) {
-      setState(() {
-        showTermsError = true;
-      });
+    if (!_isChecked) {
+      setState(() => _showTermsError = true);
       return;
     }
+    setState(() => _isLoading = true);
     try {
-      final response = await authApi.register(
-        name: _nameController.text.trim(),
-        number: _mobileController.text.trim(),
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
-
-      print(response.data);
-      if (!mounted) return;
-      context.push('/register_otp');
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Register failed')));
+      await ref.read(authControllerProvider.notifier).register(
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
+            fullName: _nameController.text.trim(),
+            role: _defaultRole,
+            mobile: _mobileController.text.trim(),
+          );
+      // GoRouter redirect navigates to home on success.
+    } on ApiException catch (e) {
+      if (mounted) _toast(e.message);
+    } catch (_) {
+      if (mounted) _toast('Registration failed. Please try again.');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  void _toast(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg),
+      backgroundColor: AppColors.error,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
+    ));
   }
 
   @override
@@ -83,192 +89,143 @@ class _RegisterPageState extends State<RegisterPage> {
                     child: Column(
                       children: [
                         SizedBox(height: 80.h),
-
                         Image.asset('assets/images/VOYZO_logo.png', width: 250),
-
                         SizedBox(height: 25.h),
-
                         Text(
                           'Register',
                           style: TextStyle(
-                            fontSize: 22.sp,
-                            fontWeight: FontWeight.w600,
-                          ),
+                              fontSize: 22.sp, fontWeight: FontWeight.w600),
                         ),
-
                         SizedBox(height: 25.h),
-
                         TextFormField(
                           controller: _nameController,
-                          decoration: const InputDecoration(
-                            hintText: 'Full Name',
-                          ),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Please enter full name';
-                            }
-                            return null;
-                          },
+                          decoration:
+                              const InputDecoration(hintText: 'Full Name'),
+                          validator: (v) =>
+                              (v == null || v.trim().isEmpty)
+                                  ? 'Please enter full name'
+                                  : null,
                         ),
-
                         SizedBox(height: 12.h),
-
                         TextFormField(
                           controller: _mobileController,
                           keyboardType: TextInputType.phone,
-                          decoration: const InputDecoration(
-                            hintText: 'Mobile No.',
-                          ),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
+                          decoration:
+                              const InputDecoration(hintText: 'Mobile No.'),
+                          validator: (v) {
+                            if (v == null || v.trim().isEmpty) {
                               return 'Please enter mobile number';
                             }
-
-                            if (!RegExp(
-                              r'^[0-9]{10}$',
-                            ).hasMatch(value.trim())) {
-                              return 'Enter valid 10 digit mobile number';
+                            if (!RegExp(r'^[0-9]{10}$').hasMatch(v.trim())) {
+                              return 'Enter a valid 10-digit mobile number';
                             }
-
                             return null;
                           },
                         ),
-
                         SizedBox(height: 12.h),
-
                         TextFormField(
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
-                          decoration: const InputDecoration(
-                            hintText: 'Email ID',
-                          ),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
+                          decoration:
+                              const InputDecoration(hintText: 'Email ID'),
+                          validator: (v) {
+                            if (v == null || v.trim().isEmpty) {
                               return 'Please enter email';
                             }
-
-                            if (!RegExp(
-                              r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                            ).hasMatch(value.trim())) {
-                              return 'Enter valid email';
+                            if (!RegExp(r'^[\w\-.]+@([\w-]+\.)+[\w-]{2,4}$')
+                                .hasMatch(v.trim())) {
+                              return 'Enter a valid email address';
                             }
-
                             return null;
                           },
                         ),
-
                         SizedBox(height: 12.h),
-
                         TextFormField(
                           controller: _passwordController,
-                          obscureText: !isPasswordVisible,
+                          obscureText: _obscure,
                           decoration: InputDecoration(
                             hintText: 'Password',
                             suffixIcon: IconButton(
-                              icon: Icon(
-                                isPasswordVisible
-                                    ? Icons.visibility
-                                    : Icons.visibility_off,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  isPasswordVisible = !isPasswordVisible;
-                                });
-                              },
+                              icon: Icon(_obscure
+                                  ? Icons.visibility
+                                  : Icons.visibility_off),
+                              onPressed: () =>
+                                  setState(() => _obscure = !_obscure),
                             ),
                           ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter password';
+                          validator: (v) {
+                            if (v == null || v.isEmpty) {
+                              return 'Please enter a password';
                             }
-
-                            if (value.length < 6) {
+                            if (v.length < 6) {
                               return 'Password must be at least 6 characters';
                             }
-
                             return null;
                           },
                         ),
-
                         SizedBox(height: 8.h),
-
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
                               children: [
                                 Checkbox(
-                                  value: isChecked,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      isChecked = value ?? false;
-
-                                      if (isChecked) {
-                                        showTermsError = false;
-                                      }
-                                    });
-                                  },
+                                  value: _isChecked,
+                                  onChanged: (v) => setState(() {
+                                    _isChecked = v ?? false;
+                                    if (_isChecked) _showTermsError = false;
+                                  }),
                                 ),
-
-                                const Text("I agree "),
-
-                                GestureDetector(
-                                  onTap: openTerms,
-                                  child: const Text(
-                                    "terms & condition.",
-                                    style: TextStyle(
+                                const Text('I agree '),
+                                const Text(
+                                  'Terms & Conditions',
+                                  style: TextStyle(
                                       color: AppColors.primary,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
+                                      fontWeight: FontWeight.bold),
                                 ),
                               ],
                             ),
-
-                            if (showTermsError)
+                            if (_showTermsError)
                               const Padding(
                                 padding: EdgeInsets.only(left: 12),
                                 child: Text(
                                   'Please accept Terms & Conditions',
                                   style: TextStyle(
-                                    color: Colors.red,
-                                    fontSize: 12,
-                                  ),
+                                      color: Colors.red, fontSize: 12),
                                 ),
                               ),
                           ],
                         ),
-
                         SizedBox(height: 20.h),
-
                         SizedBox(
                           width: double.infinity,
                           height: 52.h,
                           child: ElevatedButton(
-                            onPressed: submitRegister,
-                            child: const Text('Register'),
+                            onPressed: _isLoading ? null : _register,
+                            child: _isLoading
+                                ? const SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white),
+                                  )
+                                : const Text('Register'),
                           ),
                         ),
-
                         SizedBox(height: 25.h),
-
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text(
-                              'Do have a account? ',
-                              style: TextStyle(color: AppColors.textHint),
-                            ),
+                            const Text('Already have an account? ',
+                                style: TextStyle(color: AppColors.textHint)),
                             GestureDetector(
-                              onTap: () {
-                                context.go('/customer_login');
-                              },
+                              onTap: () => context.go('/customer_login'),
                               child: const Text(
                                 'Login',
                                 style: TextStyle(
-                                  color: Colors.orange,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                    color: Colors.orange,
+                                    fontWeight: FontWeight.bold),
                               ),
                             ),
                           ],

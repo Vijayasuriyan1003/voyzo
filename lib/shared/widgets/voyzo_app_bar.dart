@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import '../../core/constants/app_colors.dart';
-import '../mock_data/mock_data.dart';
 
-/// Figma driver top bar (nodes 350:1212 / 350:1255 / 354:421): a white bar with
-/// a soft drop shadow, a centred title, an optional back arrow on the left and
-/// the circular "AD" driver avatar on the right.
-class VoyzoAppBar extends StatelessWidget implements PreferredSizeWidget {
+import '../../core/constants/app_colors.dart';
+import '../../features/auth/application/auth_controller.dart';
+
+/// Top app bar used across driver screens.  Reads the authenticated user's
+/// initials from [authControllerProvider] instead of hard-coded mock data.
+class VoyzoAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final String title;
   final bool showProfile;
   final bool showBack;
@@ -22,7 +23,10 @@ class VoyzoAppBar extends StatelessWidget implements PreferredSizeWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final initials =
+        ref.watch(authControllerProvider.select((s) => s.initials));
+
     return AppBar(
       backgroundColor: AppColors.surface,
       surfaceTintColor: Colors.transparent,
@@ -59,7 +63,7 @@ class VoyzoAppBar extends StatelessWidget implements PreferredSizeWidget {
                 radius: 16.r,
                 backgroundColor: AppColors.avatarGrey,
                 child: Text(
-                  MockData.driver['initials'] as String,
+                  initials,
                   style: TextStyle(
                     color: AppColors.primary,
                     fontSize: 13.sp,
