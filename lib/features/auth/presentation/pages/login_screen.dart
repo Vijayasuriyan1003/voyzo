@@ -48,11 +48,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                SizedBox(height: 50.h),
+
+                Image.asset('assets/images/VOYZO_logo.png', width: 250),
+
+                SizedBox(height: 25.h),
                 Text(
                   'Driver Login',
                   style: TextStyle(
                     fontSize: 22.sp,
-                    fontWeight: FontWeight.w400,
+                    fontWeight: FontWeight.w500,
                     color: AppColors.textPrimary,
                   ),
                 ),
@@ -163,7 +168,7 @@ class _Field extends StatelessWidget {
   }
 
   OutlineInputBorder _border(Color c) => OutlineInputBorder(
-        borderRadius: BorderRadius.circular(100.r),
-        borderSide: BorderSide(color: c),
-      );
+    borderRadius: BorderRadius.circular(100.r),
+    borderSide: BorderSide(color: c),
+  );
 }

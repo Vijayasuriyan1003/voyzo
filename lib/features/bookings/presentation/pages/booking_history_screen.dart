@@ -27,8 +27,7 @@ class BookingHistoryScreen extends ConsumerWidget {
           SizedBox(height: 14.h),
           _Filters(
             active: state.activeFilter,
-            onChanged: (f) =>
-                ref.read(bookingProvider.notifier).setFilter(f),
+            onChanged: (f) => ref.read(bookingProvider.notifier).setFilter(f),
           ),
           SizedBox(height: 6.h),
           Expanded(
@@ -37,7 +36,9 @@ class BookingHistoryScreen extends ConsumerWidget {
                     child: Text(
                       'No trips',
                       style: TextStyle(
-                          fontSize: 15.sp, color: AppColors.labelGrey),
+                        fontSize: 15.sp,
+                        color: AppColors.labelGrey,
+                      ),
                     ),
                   )
                 : ListView.builder(
@@ -48,8 +49,9 @@ class BookingHistoryScreen extends ConsumerWidget {
                       return TripRouteCard(
                         pickup: b.pickupLocation,
                         drop: b.dropLocation,
-                        dateTime: DateFormat('dd-MM-yyyy  HH:mm:ss')
-                            .format(b.scheduledDateTime),
+                        dateTime: DateFormat(
+                          'dd-MM-yyyy  HH:mm:ss',
+                        ).format(b.scheduledDateTime),
                         status: b.status,
                         onTap: () => _onTap(context, ref, b),
                       );
@@ -78,6 +80,7 @@ class _Filters extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 8.w),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           _chip('All', 'all'),
           SizedBox(width: 10.w),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:voyzo/core/constants/app_colors.dart';
 import 'package:voyzo/core/network/dio_client.dart';
 import 'package:voyzo/features/auth/data/auth_api.dart';
 
@@ -177,7 +178,7 @@ class _CustomerLoginPageState extends State<CustomerLoginPage> {
                             height: 48.h,
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.orange,
+                                backgroundColor: AppColors.primary,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(30),
                                 ),
@@ -225,7 +226,7 @@ class _CustomerLoginPageState extends State<CustomerLoginPage> {
                                 child: const Text(
                                   "Sign up",
                                   style: TextStyle(
-                                    color: Colors.orange,
+                                    color: AppColors.primary,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
