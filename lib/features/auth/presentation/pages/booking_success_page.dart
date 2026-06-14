@@ -16,6 +16,10 @@ class BookingSuccessPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Booking Page'),
         centerTitle: true,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: Colors.grey.shade300, height: 1),
+        ),
         actions: [
           InkWell(
             borderRadius: BorderRadius.circular(20.r),

@@ -84,6 +84,10 @@ class _CustomerBookingHistoryPageState
       appBar: AppBar(
         title: const Text('Booking History'),
         centerTitle: true,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: Colors.grey.shade300, height: 1),
+        ),
         actions: [
           InkWell(
             borderRadius: BorderRadius.circular(20.r),

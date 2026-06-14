@@ -53,5 +53,7 @@ class AppColors {
   static const Color active = Color(0xFF2E7D32);
   static const Color activeContainer = Color(0xFFE8F5E9);
 
-  static const Color cardShadow = Color(0x26000000); // 0.15 black, Figma card shadow
+  static const Color cardShadow = Color(
+    0x26000000,
+  ); // 0.15 black, Figma card shadow
 }

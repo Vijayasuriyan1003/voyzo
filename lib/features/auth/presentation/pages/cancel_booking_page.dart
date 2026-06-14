@@ -113,6 +113,10 @@ class _CancelBookingPageState extends State<CancelBookingPage> {
         backgroundColor: Colors.white,
         elevation: 1,
         centerTitle: true,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: Colors.grey.shade300, height: 1),
+        ),
         title: Text(
           'Cancel Booking',
           style: TextStyle(

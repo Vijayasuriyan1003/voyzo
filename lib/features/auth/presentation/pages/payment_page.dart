@@ -16,6 +16,10 @@ class PaymentPage extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 1,
         centerTitle: true,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: Colors.grey.shade300, height: 1),
+        ),
         title: Text(
           'Payment',
           style: TextStyle(
