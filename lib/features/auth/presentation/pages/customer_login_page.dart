@@ -25,35 +25,35 @@ class _CustomerLoginPageState extends State<CustomerLoginPage> {
     super.dispose();
   }
 
-  final authApi = AuthApi();
-  Future<void> submitLogin() async {
-    if (!_formKey.currentState!.validate()) return;
+  // final authApi = AuthApi();
+  // Future<void> submitLogin() async {
+  //   if (!_formKey.currentState!.validate()) return;
 
-    try {
-      final success = await authApi.login(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
+  //   try {
+  //     final success = await authApi.login(
+  //       email: _emailController.text.trim(),
+  //       password: _passwordController.text.trim(),
+  //     );
 
-      if (!mounted) return;
+  //     if (!mounted) return;
 
-      if (success) {
-        context.go('/home_page');
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Invalid email or password')),
-        );
-      }
-    } catch (e) {
-      print("LOGIN ERROR: $e");
+  //     if (success) {
+  //       context.go('/home_page');
+  //     } else {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         const SnackBar(content: Text('Invalid email or password')),
+  //       );
+  //     }
+  //   } catch (e) {
+  //     print("LOGIN ERROR: $e");
 
-      if (!mounted) return;
+  //     if (!mounted) return;
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Login failed')));
-    }
-  }
+  //     ScaffoldMessenger.of(
+  //       context,
+  //     ).showSnackBar(const SnackBar(content: Text('Login failed')));
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -183,7 +183,11 @@ class _CustomerLoginPageState extends State<CustomerLoginPage> {
                                   borderRadius: BorderRadius.circular(30),
                                 ),
                               ),
-                              onPressed: submitLogin,
+                              onPressed: () {
+                                if (_formKey.currentState!.validate()) {
+                                  context.go('/home_page');
+                                }
+                              },
                               child: Text(
                                 "Log In",
                                 style: TextStyle(

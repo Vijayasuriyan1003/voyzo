@@ -37,34 +37,34 @@ class _RegisterPageState extends State<RegisterPage> {
     // await launchUrl(url, mode: LaunchMode.externalApplication);
   }
 
-  final authApi = AuthApi();
+  // final authApi = AuthApi();
 
-  Future<void> submitRegister() async {
-    if (!_formKey.currentState!.validate()) return;
+  // Future<void> submitRegister() async {
+  //   if (!_formKey.currentState!.validate()) return;
 
-    if (!isChecked) {
-      setState(() {
-        showTermsError = true;
-      });
-      return;
-    }
-    try {
-      final response = await authApi.register(
-        name: _nameController.text.trim(),
-        number: _mobileController.text.trim(),
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
+  //   if (!isChecked) {
+  //     setState(() {
+  //       showTermsError = true;
+  //     });
+  //     return;
+  //   }
+  //   try {
+  //     final response = await authApi.register(
+  //       name: _nameController.text.trim(),
+  //       number: _mobileController.text.trim(),
+  //       email: _emailController.text.trim(),
+  //       password: _passwordController.text.trim(),
+  //     );
 
-      print(response.data);
-      if (!mounted) return;
-      context.push('/register_otp');
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Register failed')));
-    }
-  }
+  //     print(response.data);
+  //     if (!mounted) return;
+  //     context.push('/register_otp');
+  //   } catch (e) {
+  //     ScaffoldMessenger.of(
+  //       context,
+  //     ).showSnackBar(const SnackBar(content: Text('Register failed')));
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -245,7 +245,11 @@ class _RegisterPageState extends State<RegisterPage> {
                           width: double.infinity,
                           height: 52.h,
                           child: ElevatedButton(
-                            onPressed: submitRegister,
+                            onPressed: () {
+                              if (_formKey.currentState!.validate()) {
+                                context.push('/register_otp');
+                              }
+                            },
                             child: const Text('Register'),
                           ),
                         ),

@@ -48,8 +48,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                SizedBox(height: 50.h),
-
+                // SizedBox(height: 50.h),
                 Image.asset('assets/images/VOYZO_logo.png', width: 250),
 
                 SizedBox(height: 25.h),

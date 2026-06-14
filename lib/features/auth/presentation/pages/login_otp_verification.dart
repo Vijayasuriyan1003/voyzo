@@ -136,7 +136,7 @@ class _LoginOtpVerificationState extends State<LoginOtpVerification> {
                     height: 52.h,
                     child: ElevatedButton(
                       onPressed: () {
-                        context.push('/customer_login');
+                        context.push('/home_page');
                       },
                       child: Text('Submit'),
                     ),
