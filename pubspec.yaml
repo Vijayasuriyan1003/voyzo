@@ -35,6 +35,9 @@ dependencies:
   # UI utilities
   flutter_screenutil: ^5.9.3
 
+  # Secure storage for session tokens
+  flutter_secure_storage: ^9.2.2
+
   # Date formatting
   intl: ^0.19.0
   dropdown_button2: ^3.1.0

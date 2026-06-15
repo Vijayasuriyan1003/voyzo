@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:voyzo/core/constants/app_colors.dart';
-import 'package:voyzo/core/network/dio_client.dart';
-import 'package:voyzo/features/auth/data/auth_api.dart';
+import 'package:voyzo/features/auth/data/customer_auth_service.dart';
 
 class CustomerLoginPage extends StatefulWidget {
   const CustomerLoginPage({super.key});
@@ -13,10 +12,13 @@ class CustomerLoginPage extends StatefulWidget {
 }
 
 class _CustomerLoginPageState extends State<CustomerLoginPage> {
-  bool isPasswordVisible = false;
+  bool _isPasswordVisible = false;
+  bool _isLoading = false;
+
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _authService = CustomerAuthService();
 
   @override
   void dispose() {
@@ -25,33 +27,29 @@ class _CustomerLoginPageState extends State<CustomerLoginPage> {
     super.dispose();
   }
 
-  final authApi = AuthApi();
-  Future<void> submitLogin() async {
+  Future<void> _submitLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
+    setState(() => _isLoading = true);
+
     try {
-      final success = await authApi.login(
+      await _authService.login(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
       if (!mounted) return;
-
-      if (success) {
-        context.go('/home_page');
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Invalid email or password')),
-        );
-      }
-    } catch (e) {
-      print("LOGIN ERROR: $e");
-
+      context.go('/home_page');
+    } catch (errorMessage) {
       if (!mounted) return;
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Login failed')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage.toString()),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -65,11 +63,9 @@ class _CustomerLoginPageState extends State<CustomerLoginPage> {
             return SingleChildScrollView(
               child: ConstrainedBox(
                 constraints: BoxConstraints(minHeight: constraints.maxHeight),
-
                 child: IntrinsicHeight(
                   child: Padding(
                     padding: EdgeInsets.all(18.h),
-
                     child: Form(
                       key: _formKey,
                       child: Column(
@@ -84,7 +80,7 @@ class _CustomerLoginPageState extends State<CustomerLoginPage> {
                           SizedBox(height: 25.h),
 
                           Text(
-                            "Login",
+                            'Login',
                             style: TextStyle(
                               fontSize: 22.sp,
                               fontWeight: FontWeight.w600,
@@ -95,27 +91,23 @@ class _CustomerLoginPageState extends State<CustomerLoginPage> {
 
                           TextFormField(
                             controller: _emailController,
+                            keyboardType: TextInputType.emailAddress,
                             decoration: const InputDecoration(
                               prefixIcon: Icon(Icons.mail_outline),
-                              hintText: "Email/Mobile Number",
+                              hintText: 'Email/Mobile Number',
                             ),
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) {
                                 return 'Please enter email or mobile number';
                               }
-
                               final isEmail = RegExp(
                                 r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
                               ).hasMatch(value);
-
-                              final isMobile = RegExp(
-                                r'^[0-9]{10}$',
-                              ).hasMatch(value);
-
+                              final isMobile =
+                                  RegExp(r'^[0-9]{10}$').hasMatch(value);
                               if (!isEmail && !isMobile) {
-                                return 'Enter valid email or 10 digit mobile number';
+                                return 'Enter a valid email or 10-digit mobile number';
                               }
-
                               return null;
                             },
                           ),
@@ -124,26 +116,25 @@ class _CustomerLoginPageState extends State<CustomerLoginPage> {
 
                           TextFormField(
                             controller: _passwordController,
-                            obscureText: !isPasswordVisible,
+                            obscureText: !_isPasswordVisible,
                             decoration: InputDecoration(
                               prefixIcon: const Icon(Icons.lock_outline),
-                              hintText: "Password",
+                              hintText: 'Password',
                               suffixIcon: IconButton(
                                 icon: Icon(
-                                  isPasswordVisible
+                                  _isPasswordVisible
                                       ? Icons.visibility
                                       : Icons.visibility_off,
                                 ),
-                                onPressed: () {
-                                  setState(() {
-                                    isPasswordVisible = !isPasswordVisible;
-                                  });
-                                },
+                                onPressed: () => setState(
+                                  () =>
+                                      _isPasswordVisible = !_isPasswordVisible,
+                                ),
                               ),
                             ),
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) {
-                                return 'Please enter password';
+                                return 'Please enter your password';
                               }
                               return null;
                             },
@@ -153,18 +144,14 @@ class _CustomerLoginPageState extends State<CustomerLoginPage> {
 
                           Row(
                             children: [
-                              Checkbox(value: false, onChanged: (value) {}),
-
-                              const Text("Remember me"),
-
+                              Checkbox(value: false, onChanged: (_) {}),
+                              const Text('Remember me'),
                               const Spacer(),
-
                               TextButton(
-                                onPressed: () {
-                                  context.push('/forgot_password');
-                                },
+                                onPressed: () =>
+                                    context.push('/forgot_password'),
                                 child: const Text(
-                                  "Forget Password?",
+                                  'Forgot Password?',
                                   style: TextStyle(color: Colors.black),
                                 ),
                               ),
@@ -183,23 +170,30 @@ class _CustomerLoginPageState extends State<CustomerLoginPage> {
                                   borderRadius: BorderRadius.circular(30),
                                 ),
                               ),
-                              onPressed: submitLogin,
-                              child: Text(
-                                "Log In",
-                                style: TextStyle(
-                                  fontSize: 20.sp,
-                                  color: Colors.white,
-                                ),
-                              ),
+                              onPressed: _isLoading ? null : _submitLogin,
+                              child: _isLoading
+                                  ? SizedBox(
+                                      width: 22.w,
+                                      height: 22.h,
+                                      child: const CircularProgressIndicator(
+                                        strokeWidth: 2.5,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : Text(
+                                      'Log In',
+                                      style: TextStyle(
+                                        fontSize: 20.sp,
+                                        color: Colors.white,
+                                      ),
+                                    ),
                             ),
                           ),
 
                           SizedBox(height: 25.h),
 
                           GestureDetector(
-                            onTap: () {
-                              context.push('/otp_login');
-                            },
+                            onTap: () => context.push('/otp_login'),
                             child: Text(
                               'Login with OTP',
                               style: TextStyle(
@@ -215,16 +209,13 @@ class _CustomerLoginPageState extends State<CustomerLoginPage> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               const Text(
-                                "Don’t have an account ? ",
+                                "Don't have an account? ",
                                 style: TextStyle(color: Colors.grey),
                               ),
-
                               GestureDetector(
-                                onTap: () {
-                                  context.push('/register');
-                                },
+                                onTap: () => context.push('/register'),
                                 child: const Text(
-                                  "Sign up",
+                                  'Sign up',
                                   style: TextStyle(
                                     color: AppColors.primary,
                                     fontWeight: FontWeight.bold,
@@ -237,11 +228,9 @@ class _CustomerLoginPageState extends State<CustomerLoginPage> {
                           const Spacer(),
 
                           TextButton(
-                            onPressed: () {
-                              context.push('/login');
-                            },
+                            onPressed: () => context.push('/login'),
                             child: Text(
-                              "Driver Login",
+                              'Driver Login',
                               style: TextStyle(
                                 color: Colors.grey,
                                 fontSize: 15.sp,
