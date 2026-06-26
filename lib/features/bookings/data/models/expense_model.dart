@@ -14,10 +14,10 @@ class ExpenseModel {
   });
 
   static const List<String> expenseTypes = [
-    'Toll',
-    'Night',
-    'Parking',
-    'Fuel',
+    'Toll / Parking',
+    'Night/driver',
+    'Per Hour',
+    'Per KM',
     'Food',
     'Maintenance',
     'Other',

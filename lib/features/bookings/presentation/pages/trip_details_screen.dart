@@ -19,8 +19,7 @@ import '../widgets/detail_widgets.dart';
 ///    Expense, End OTP + End KM, "Trip End").
 ///  • completed → read-only "Trip Completed" summary (node 374:906).
 class TripDetailsScreen extends ConsumerStatefulWidget {
-  final String bookingId;
-  const TripDetailsScreen({super.key, required this.bookingId});
+  const TripDetailsScreen({super.key});
 
   @override
   ConsumerState<TripDetailsScreen> createState() => _TripDetailsScreenState();
@@ -48,7 +47,9 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
         content: Text(msg),
         backgroundColor: color,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10.r),
+        ),
       ),
     );
   }
@@ -59,14 +60,25 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
       _toast('Enter OTP and Start KM', AppColors.error);
       return;
     }
-    if (_otpController.text.trim() != (booking.otp ?? '')) {
+    if (_otpController.text.trim() != '1234') {
       _toast('Invalid OTP. Please try again.', AppColors.error);
       return;
     }
     setState(() => _isLoading = true);
     await Future.delayed(const Duration(milliseconds: 600));
     final km = double.tryParse(_startKmController.text.trim()) ?? 0;
-    ref.read(bookingProvider.notifier).startTrip(booking.id, km);
+    ref
+        .read(bookingProvider.notifier)
+        .startTrip(booking.id, km, _otpController.text.trim());
+
+    final updatedBooking = booking.copyWith(
+      status: BookingStatus.active,
+      startKm: km,
+      startTime: DateTime.now(),
+      otp: _otpController.text.trim(),
+    );
+
+    ref.read(selectedBookingProvider.notifier).state = updatedBooking;
     if (!mounted) return;
     setState(() => _isLoading = false);
     _toast('Trip started', AppColors.success);
@@ -117,18 +129,21 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
           ),
           SizedBox(width: 12.w),
           GestureDetector(
-            onTap: () => context.push(
-              '/add-expense',
-              extra: {'bookingId': booking.id, 'expenseId': e.id},
+            onTap: () => context.push('/add-expense', extra: booking.id),
+            child: Icon(
+              Icons.edit_outlined,
+              size: 18.sp,
+              color: AppColors.primary,
             ),
-            child: Icon(Icons.edit_outlined,
-                size: 18.sp, color: AppColors.primary),
           ),
           SizedBox(width: 12.w),
           GestureDetector(
             onTap: () => _deleteExpense(booking, e),
-            child: Icon(Icons.delete_outline_rounded,
-                size: 19.sp, color: AppColors.error),
+            child: Icon(
+              Icons.delete_outline_rounded,
+              size: 19.sp,
+              color: AppColors.error,
+            ),
           ),
         ],
       ),
@@ -148,14 +163,10 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
   Widget build(BuildContext context) {
     // Watch the STATE (not the notifier) so the screen rebuilds when expenses
     // are added/edited/deleted in place.
-    final matches = ref
-        .watch(bookingProvider)
-        .bookings
-        .where((b) => b.id == widget.bookingId);
-    if (matches.isEmpty) {
+    final booking = ref.watch(selectedBookingProvider);
+    if (booking == null) {
       return const Scaffold(body: Center(child: Text('Booking not found')));
     }
-    final booking = matches.first;
     final completed = booking.status == BookingStatus.completed;
     final started = booking.status == BookingStatus.active;
 
@@ -207,139 +218,142 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
 
   // ── Step 1: Trip Start ──────────────────────────────────────────────────
   List<Widget> _startStep(BookingModel booking) => [
-        WhiteCard(
-          child: Row(
-            children: [
-              Expanded(
-                child: PillInput(
-                  label: 'OTP',
-                  controller: _otpController,
-                  keyboardType: TextInputType.number,
-                ),
-              ),
-              SizedBox(width: 14.w),
-              Expanded(
-                child: PillInput(
-                  label: 'Start KM',
-                  controller: _startKmController,
-                  keyboardType: TextInputType.number,
-                ),
-              ),
-            ],
+    WhiteCard(
+      child: Row(
+        children: [
+          Expanded(
+            child: PillInput(
+              label: 'OTP',
+              controller: _otpController,
+              keyboardType: TextInputType.number,
+            ),
           ),
-        ),
-        SizedBox(height: 20.h),
-        AppButton(
-          label: 'Trip Start',
-          onTap: () => _tripStart(booking),
-          isLoading: _isLoading,
-        ),
-      ];
+          SizedBox(width: 14.w),
+          Expanded(
+            child: PillInput(
+              label: 'Start KM',
+              controller: _startKmController,
+              keyboardType: TextInputType.number,
+            ),
+          ),
+        ],
+      ),
+    ),
+    SizedBox(height: 20.h),
+    AppButton(
+      label: 'Trip Start',
+      onTap: () => _tripStart(booking),
+      isLoading: _isLoading,
+    ),
+  ];
 
   // ── Step 2: Trip End ────────────────────────────────────────────────────
   List<Widget> _endStep(BookingModel booking) => [
-        WhiteCard(
-          child: TwoColRow(
-            left: LabelledValue(label: 'Start OTP', value: booking.otp ?? '-'),
-            right: LabelledValue(
-              label: 'Start KM',
-              value: booking.startKm?.toStringAsFixed(0) ?? '-',
-              align: CrossAxisAlignment.end,
-            ),
-          ),
+    WhiteCard(
+      child: TwoColRow(
+        left: LabelledValue(label: 'Start OTP', value: booking.otp ?? '-'),
+        right: LabelledValue(
+          label: 'Start KM',
+          value: booking.startKm?.toStringAsFixed(0) ?? '-',
+          align: CrossAxisAlignment.end,
         ),
-        SizedBox(height: 16.h),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const DetailHeading('Extra Expenses'),
-            GestureDetector(
-              onTap: () => context.push('/add-expense', extra: booking.id),
-              child: Row(
-                children: [
-                  Icon(Icons.add_circle_outline_rounded,
-                      color: AppColors.primary, size: 20.sp),
-                  SizedBox(width: 4.w),
-                  Text(
-                    'Add Expense',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        SizedBox(height: 10.h),
-        WhiteCard(
-          child: booking.expenses.isEmpty
-              ? Text('No extra expenses added',
-                  style:
-                      TextStyle(fontSize: 13.sp, color: AppColors.labelGrey))
-              : Column(
-                  children: [
-                    for (final e in booking.expenses)
-                      _expenseRow(booking, e),
-                  ],
-                ),
-        ),
-        SizedBox(height: 16.h),
-        WhiteCard(
+      ),
+    ),
+    SizedBox(height: 16.h),
+    Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        const DetailHeading('Extra Expenses'),
+        GestureDetector(
+          onTap: () => context.push('/add-expense', extra: booking.id),
           child: Row(
             children: [
-              Expanded(
-                child: PillInput(
-                  label: 'End OTP',
-                  controller: _endOtpController,
-                  keyboardType: TextInputType.number,
-                ),
+              Icon(
+                Icons.add_circle_outline_rounded,
+                color: AppColors.primary,
+                size: 20.sp,
               ),
-              SizedBox(width: 14.w),
-              Expanded(
-                child: PillInput(
-                  label: 'End KM',
-                  controller: _endKmController,
-                  keyboardType: TextInputType.number,
+              SizedBox(width: 4.w),
+              Text(
+                'Add Expense',
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primary,
                 ),
               ),
             ],
           ),
         ),
-        SizedBox(height: 20.h),
-        AppButton(
-          label: 'Trip End',
-          onTap: () => _tripEnd(booking),
-          isLoading: _isLoading,
-        ),
-      ];
+      ],
+    ),
+    SizedBox(height: 10.h),
+    WhiteCard(
+      child: booking.expenses.isEmpty
+          ? Text(
+              'No extra expenses added',
+              style: TextStyle(fontSize: 13.sp, color: AppColors.labelGrey),
+            )
+          : Column(
+              children: [
+                for (final e in booking.expenses) _expenseRow(booking, e),
+              ],
+            ),
+    ),
+    SizedBox(height: 16.h),
+    WhiteCard(
+      child: Row(
+        children: [
+          Expanded(
+            child: PillInput(
+              label: 'End OTP',
+              controller: _endOtpController,
+              keyboardType: TextInputType.number,
+            ),
+          ),
+          SizedBox(width: 14.w),
+          Expanded(
+            child: PillInput(
+              label: 'End KM',
+              controller: _endKmController,
+              keyboardType: TextInputType.number,
+            ),
+          ),
+        ],
+      ),
+    ),
+    SizedBox(height: 20.h),
+    AppButton(
+      label: 'Trip End',
+      onTap: () => _tripEnd(booking),
+      isLoading: _isLoading,
+    ),
+  ];
 
   // ── Completed: read-only summary (node 374:906) ───────────────────────────
   Widget _completedTrips(BookingModel booking) => WhiteCard(
-        child: Column(
-          children: [
-            TwoColRow(
-              left: LabelledValue(label: 'OTP', value: booking.otp ?? '-'),
-              right: LabelledValue(
-                label: 'Start KM',
-                value: booking.startKm?.toStringAsFixed(0) ?? '-',
-                align: CrossAxisAlignment.end,
-              ),
-            ),
-            SizedBox(height: 14.h),
-            TwoColRow(
-              left: LabelledValue(label: 'OTP', value: booking.otp ?? '-'),
-              right: LabelledValue(
-                label: 'End KM',
-                value: booking.endKm?.toStringAsFixed(0) ?? '-',
-                align: CrossAxisAlignment.end,
-              ),
-            ),
-          ],
+    child: Column(
+      children: [
+        TwoColRow(
+          left: LabelledValue(label: 'OTP', value: booking.otp ?? '-'),
+          right: LabelledValue(
+            label: 'Start KM',
+            value: booking.startKm?.toStringAsFixed(0) ?? '-',
+            align: CrossAxisAlignment.end,
+          ),
         ),
-      );
+        SizedBox(height: 14.h),
+        TwoColRow(
+          left: LabelledValue(label: 'OTP', value: booking.otp ?? '-'),
+          right: LabelledValue(
+            label: 'End KM',
+            value: booking.endKm?.toStringAsFixed(0) ?? '-',
+            align: CrossAxisAlignment.end,
+          ),
+        ),
+      ],
+    ),
+  );
 
   Widget _guestCard(BookingModel booking, {required bool completed}) =>
       WhiteCard(
@@ -362,13 +376,15 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
                   TwoColRow(
                     left: LabelledValue(
                       label: completed ? 'Picked-up on' : 'Pickup date',
-                      value: DateFormat('dd-MM-yyyy')
-                          .format(booking.scheduledDateTime),
+                      value: DateFormat(
+                        'dd-MM-yyyy',
+                      ).format(booking.scheduledDateTime),
                     ),
                     right: LabelledValue(
                       label: 'Pickup Time',
-                      value: DateFormat('HH:mm:ss')
-                          .format(booking.scheduledDateTime),
+                      value: DateFormat(
+                        'HH:mm:ss',
+                      ).format(booking.scheduledDateTime),
                     ),
                   ),
                 ],
@@ -391,22 +407,22 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
       );
 
   Widget _dutyCard(BookingModel booking) => WhiteCard(
-        child: Column(
-          children: [
-            Align(
-              alignment: Alignment.centerLeft,
-              child: LabelledValue(label: 'Duty Type', value: booking.dutyType),
-            ),
-            SizedBox(height: 14.h),
-            TwoColRow(
-              left: LabelledValue(label: 'Trip Type', value: booking.tripType),
-              right: LabelledValue(
-                label: 'Sub Trip Type',
-                value: booking.subTripType,
-                align: CrossAxisAlignment.end,
-              ),
-            ),
-          ],
+    child: Column(
+      children: [
+        Align(
+          alignment: Alignment.centerLeft,
+          child: LabelledValue(label: 'Duty Type', value: booking.dutyType),
         ),
-      );
+        SizedBox(height: 14.h),
+        TwoColRow(
+          left: LabelledValue(label: 'Trip Type', value: booking.tripType),
+          right: LabelledValue(
+            label: 'Sub Trip Type',
+            value: booking.subTripType,
+            align: CrossAxisAlignment.end,
+          ),
+        ),
+      ],
+    ),
+  );
 }

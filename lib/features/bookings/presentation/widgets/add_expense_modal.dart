@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:voyzo/features/auth/data/auth_api.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../data/models/expense_model.dart';
@@ -30,7 +31,9 @@ class _AddExpenseModalState extends ConsumerState<AddExpenseModal> {
   }
 
   void _addExpense() async {
+    print('ADD EXPENSE FUNCTION STARTED');
     final amount = double.tryParse(_amountController.text.trim());
+
     if (amount == null || amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -38,15 +41,38 @@ class _AddExpenseModalState extends ConsumerState<AddExpenseModal> {
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10.r)),
+            borderRadius: BorderRadius.circular(10.r),
+          ),
         ),
       );
       return;
     }
 
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 500));
 
+    final success = await AuthApi.addExpense(
+      bookingId: widget.bookingId,
+      expenseType: _selectedType,
+      price: amount,
+    );
+
+    if (!mounted) return;
+
+    setState(() => _isLoading = false);
+
+    if (!success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Failed to add expense'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10.r),
+          ),
+        ),
+      );
+      return;
+    }
     final expense = ExpenseModel(
       id: 'EX${DateTime.now().millisecondsSinceEpoch}',
       type: _selectedType,
@@ -59,18 +85,26 @@ class _AddExpenseModalState extends ConsumerState<AddExpenseModal> {
 
     ref.read(bookingProvider.notifier).addExpense(widget.bookingId, expense);
 
-    if (mounted) {
-      Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('$_selectedType expense of ₹${amount.toStringAsFixed(0)} added'),
-          backgroundColor: AppColors.success,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10.r)),
-        ),
-      );
+    final selectedBooking = ref.read(selectedBookingProvider);
+    if (selectedBooking != null) {
+      ref.read(selectedBookingProvider.notifier).state = selectedBooking
+          .copyWith(expenses: [...selectedBooking.expenses, expense]);
     }
+
+    Navigator.of(context).pop();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '$_selectedType expense of ₹${amount.toStringAsFixed(0)} added',
+        ),
+        backgroundColor: AppColors.success,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10.r),
+        ),
+      ),
+    );
   }
 
   @override
@@ -116,8 +150,10 @@ class _AddExpenseModalState extends ConsumerState<AddExpenseModal> {
                 ),
                 IconButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.close_rounded,
-                      color: AppColors.textSecondary),
+                  icon: const Icon(
+                    Icons.close_rounded,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ],
             ),
@@ -143,7 +179,9 @@ class _AddExpenseModalState extends ConsumerState<AddExpenseModal> {
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 150),
                     padding: EdgeInsets.symmetric(
-                        horizontal: 14.w, vertical: 8.h),
+                      horizontal: 14.w,
+                      vertical: 8.h,
+                    ),
                     decoration: BoxDecoration(
                       color: isSelected
                           ? AppColors.primary
@@ -183,8 +221,9 @@ class _AddExpenseModalState extends ConsumerState<AddExpenseModal> {
             SizedBox(height: 8.h),
             TextFormField(
               controller: _amountController,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*')),
               ],
@@ -276,10 +315,14 @@ class _AddExpenseModalState extends ConsumerState<AddExpenseModal> {
               ),
             ),
             SizedBox(height: 24.h),
-
             AppButton(
               label: 'Add Expense',
-              onTap: _isLoading ? null : _addExpense,
+              onTap: _isLoading
+                  ? null
+                  : () {
+                      print('APP BUTTON CLICKED');
+                      _addExpense();
+                    },
               isLoading: _isLoading,
               icon: Icons.add_circle_outline_rounded,
             ),

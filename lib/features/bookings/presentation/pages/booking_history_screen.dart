@@ -11,11 +11,26 @@ import '../widgets/trip_route_card.dart';
 
 /// Figma driver "Booking History" (node 350:1212) — top bar with avatar,
 /// All / Upcoming / Completed filter chips and route cards.
-class BookingHistoryScreen extends ConsumerWidget {
+class BookingHistoryScreen extends ConsumerStatefulWidget {
   const BookingHistoryScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<BookingHistoryScreen> createState() =>
+      _BookingHistoryScreenState();
+}
+
+class _BookingHistoryScreenState extends ConsumerState<BookingHistoryScreen> {
+  @override
+  void initState() {
+    super.initState();
+
+    Future.microtask(() {
+      ref.read(bookingProvider.notifier).fetchDriverBookings();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(bookingProvider);
     final bookings = state.filteredBookings;
 
@@ -53,7 +68,7 @@ class BookingHistoryScreen extends ConsumerWidget {
                           'dd-MM-yyyy  HH:mm:ss',
                         ).format(b.scheduledDateTime),
                         status: b.status,
-                        onTap: () => _onTap(context, ref, b),
+                        onTap: () => _onTap(b),
                       );
                     },
                   ),
@@ -63,9 +78,11 @@ class BookingHistoryScreen extends ConsumerWidget {
     );
   }
 
-  void _onTap(BuildContext context, WidgetRef ref, BookingModel booking) {
-    ref.read(selectedBookingIdProvider.notifier).state = booking.id;
-    context.push('/trip-details', extra: booking.id);
+  void _onTap(BookingModel booking) {
+    ref.read(selectedBookingProvider.notifier).state = booking;
+    // ref.read(selectedBookingIdProvider.notifier).state = booking.id;
+
+    context.push('/trip-details');
   }
 }
 
