@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:voyzo/core/constants/app_colors.dart';
 import 'package:voyzo/core/network/dio_client.dart';
 import 'package:voyzo/features/auth/data/auth_api.dart';
+import 'package:voyzo/features/auth/presentation/provider/user_provider.dart';
 
-class CustomerLoginPage extends StatefulWidget {
+class CustomerLoginPage extends ConsumerStatefulWidget {
   const CustomerLoginPage({super.key});
 
   @override
-  State<CustomerLoginPage> createState() => _CustomerLoginPageState();
+  ConsumerState<CustomerLoginPage> createState() => _CustomerLoginPageState();
 }
 
-class _CustomerLoginPageState extends State<CustomerLoginPage> {
+class _CustomerLoginPageState extends ConsumerState<CustomerLoginPage> {
   bool isPasswordVisible = false;
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
@@ -25,35 +27,50 @@ class _CustomerLoginPageState extends State<CustomerLoginPage> {
     super.dispose();
   }
 
-  // final authApi = AuthApi();
-  // Future<void> submitLogin() async {
-  //   if (!_formKey.currentState!.validate()) return;
+  final authApi = AuthApi();
+  Future<void> submitLogin() async {
+    if (!_formKey.currentState!.validate()) return;
 
-  //   try {
-  //     final success = await authApi.login(
-  //       email: _emailController.text.trim(),
-  //       password: _passwordController.text.trim(),
-  //     );
+    try {
+      final userData = await authApi.login(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+      if (!mounted) return;
 
-  //     if (!mounted) return;
+      if (userData != null) {
+        ref.read(userProvider.notifier).state = UserState(
+          email: userData['email'] ?? '',
+          fullName: userData['full_name'] ?? '',
+          mobileNo: userData['mobile_no'] ?? '',
+          customerId: userData['customer_id'] ?? '',
+          customerName: userData['customer_name'] ?? '',
+        );
 
-  //     if (success) {
-  //       context.go('/home_page');
-  //     } else {
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         const SnackBar(content: Text('Invalid email or password')),
-  //       );
-  //     }
-  //   } catch (e) {
-  //     print("LOGIN ERROR: $e");
+        final user = ref.read(userProvider);
 
-  //     if (!mounted) return;
+        print('EMAIL: ${user?.email}');
+        print('NAME: ${user?.fullName}');
+        print('MOBILE: ${user?.mobileNo}');
+        print('CUSTOMER ID: ${user?.customerId}');
+        print('CUSTOMER NAME: ${user?.customerName}');
 
-  //     ScaffoldMessenger.of(
-  //       context,
-  //     ).showSnackBar(const SnackBar(content: Text('Login failed')));
-  //   }
-  // }
+        context.go('/home_page');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Invalid email or password')),
+        );
+      }
+    } catch (e) {
+      print('LOGIN ERROR: $e');
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Login failed')));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -183,11 +200,7 @@ class _CustomerLoginPageState extends State<CustomerLoginPage> {
                                   borderRadius: BorderRadius.circular(30),
                                 ),
                               ),
-                              onPressed: () {
-                                if (_formKey.currentState!.validate()) {
-                                  context.go('/home_page');
-                                }
-                              },
+                              onPressed: submitLogin,
                               child: Text(
                                 "Log In",
                                 style: TextStyle(

@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:voyzo/core/constants/app_colors.dart';
 
 class SetNewPasswordPage extends StatefulWidget {
-  const SetNewPasswordPage({super.key});
+  final bool isChangePassword;
+
+  const SetNewPasswordPage({super.key, this.isChangePassword = false});
 
   @override
   State<SetNewPasswordPage> createState() => _SetNewPasswordPageState();
@@ -16,6 +18,7 @@ class _SetNewPasswordPageState extends State<SetNewPasswordPage> {
 
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
+  final _oldPasswordController = TextEditingController();
 
   String? passwordError;
   String? confirmPasswordError;
@@ -130,6 +133,7 @@ class _SetNewPasswordPageState extends State<SetNewPasswordPage> {
 
   @override
   void dispose() {
+    _oldPasswordController.dispose();
     passwordController.dispose();
     confirmPasswordController.dispose();
     super.dispose();
@@ -153,7 +157,11 @@ class _SetNewPasswordPageState extends State<SetNewPasswordPage> {
                         alignment: Alignment.centerLeft,
                         child: TextButton.icon(
                           onPressed: () {
-                            context.go('/forgot_password');
+                            if (widget.isChangePassword) {
+                              context.go('/customer_profile');
+                            } else {
+                              context.go('/forget_password');
+                            }
                           },
                           icon: Icon(
                             Icons.arrow_back_ios,
@@ -185,6 +193,30 @@ class _SetNewPasswordPageState extends State<SetNewPasswordPage> {
                       ),
 
                       SizedBox(height: 30.h),
+
+                      if (widget.isChangePassword) ...[
+                        TextFormField(
+                          controller: _oldPasswordController,
+                          obscureText: !isPasswordVisible,
+                          decoration: inputDecoration(
+                            hint: 'Old Password',
+                            visible: isPasswordVisible,
+                            onTap: () {
+                              setState(() {
+                                isPasswordVisible = !isPasswordVisible;
+                              });
+                            },
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter old password';
+                            }
+                            return null;
+                          },
+                        ),
+
+                        SizedBox(height: 16.h),
+                      ],
 
                       TextField(
                         controller: passwordController,

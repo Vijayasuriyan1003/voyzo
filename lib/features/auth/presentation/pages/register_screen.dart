@@ -3,6 +3,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:voyzo/core/constants/app_colors.dart';
 import 'package:voyzo/features/auth/data/auth_api.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../shared/widgets/app_button.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -32,39 +34,168 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
-  void openTerms() async {
-    // final Uri url = Uri.parse("https://your-website.com/terms");
-    // await launchUrl(url, mode: LaunchMode.externalApplication);
+  Widget termsItem({required String title, required String description}) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 14.h),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          SizedBox(height: 6.h),
+          Text(
+            description,
+            style: TextStyle(
+              fontSize: 13.sp,
+              color: Colors.black87,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
-  // final authApi = AuthApi();
+  void openTerms() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.r),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(16.r),
+                    topRight: Radius.circular(16.r),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Text(
+                      'Terms & Conditions',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: () {
+                        context.pop();
+                      },
+                      child: Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 22.sp,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
 
-  // Future<void> submitRegister() async {
-  //   if (!_formKey.currentState!.validate()) return;
+              SizedBox(
+                height: 350.h,
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.all(16.w),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      termsItem(
+                        title: '1. Acceptance of Terms',
+                        description:
+                            'By using this application, you agree to be bound by these Terms & Conditions. If you do not agree, please do not use the app.',
+                      ),
+                      termsItem(
+                        title: '2. Use of Service',
+                        description:
+                            'You agree to use this service only for lawful purposes and in a way that does not infringe the rights of others or restrict their use of the service.',
+                      ),
+                      termsItem(
+                        title: '3. Privacy Policy',
+                        description:
+                            'Your personal data is collected and processed in accordance with our Privacy Policy. By using this app, you consent to such processing.',
+                      ),
+                      termsItem(
+                        title: '4. Booking & Cancellation',
+                        description:
+                            'All bookings are subject to availability. Cancellations must be made within the specified time frame to avoid charges.',
+                      ),
+                      termsItem(
+                        title: '5. Liability',
+                        description:
+                            'We are not liable for any indirect or consequential loss arising from the use of this application or its services.',
+                      ),
+                      termsItem(
+                        title: '6. Changes to Terms',
+                        description:
+                            'We reserve the right to modify these terms at any time. Continued use of the app after changes constitutes acceptance of the new terms.',
+                      ),
+                    ],
+                  ),
+                ),
+              ),
 
-  //   if (!isChecked) {
-  //     setState(() {
-  //       showTermsError = true;
-  //     });
-  //     return;
-  //   }
-  //   try {
-  //     final response = await authApi.register(
-  //       name: _nameController.text.trim(),
-  //       number: _mobileController.text.trim(),
-  //       email: _emailController.text.trim(),
-  //       password: _passwordController.text.trim(),
-  //     );
+              Padding(
+                padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 16.h),
+                child: AppButton(
+                  label: 'Accept & Continue',
+                  onTap: () {
+                    setState(() {
+                      isChecked = true;
+                      showTermsError = false;
+                    });
 
-  //     print(response.data);
-  //     if (!mounted) return;
-  //     context.push('/register_otp');
-  //   } catch (e) {
-  //     ScaffoldMessenger.of(
-  //       context,
-  //     ).showSnackBar(const SnackBar(content: Text('Register failed')));
-  //   }
-  // }
+                    context.pop();
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  final authApi = AuthApi();
+
+  Future<void> submitRegister() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    try {
+      final success = await authApi.registerCustomer(
+        full_name: _nameController.text.trim(),
+        email: _emailController.text.trim(),
+        mobileno: _mobileController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+
+      if (success && mounted) {
+        context.push('/register_otp');
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -245,11 +376,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           width: double.infinity,
                           height: 52.h,
                           child: ElevatedButton(
-                            onPressed: () {
-                              if (_formKey.currentState!.validate()) {
-                                context.push('/register_otp');
-                              }
-                            },
+                            onPressed: submitRegister,
                             child: const Text('Register'),
                           ),
                         ),

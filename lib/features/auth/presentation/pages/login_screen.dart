@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:voyzo/features/auth/data/auth_api.dart';
+import 'package:voyzo/features/bookings/presentation/providers/driver_provider.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../shared/providers/auth_provider.dart';
 
@@ -29,12 +31,45 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _login() async {
-    setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 900));
-    if (mounted) {
-      ref.read(isLoggedInProvider.notifier).state = true;
-      context.go('/booking-history');
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter email and password')),
+      );
+      return;
     }
+
+    setState(() => _isLoading = true);
+
+    final driverData = await AuthApi.driverLogin(
+      email: email,
+      password: password,
+    );
+
+    if (!mounted) return;
+
+    setState(() => _isLoading = false);
+
+    if (driverData == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Invalid login or driver profile not found'),
+        ),
+      );
+      return;
+    }
+
+    ref.read(driverProvider.notifier).setDriver(driverData);
+    ref.read(isLoggedInProvider.notifier).state = true;
+
+    print('Driver Email: ${driverData['email']}');
+    print('Driver ID: ${driverData['driver_id']}');
+    print('Driver Name: ${driverData['full_name']}');
+    print('Driver Mobile: ${driverData['mobile_no']}');
+
+    context.go('/booking-history');
   }
 
   @override
