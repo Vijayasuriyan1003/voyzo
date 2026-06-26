@@ -1,23 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-
 import '../../../../core/constants/app_colors.dart';
 
 class DriverDetailsCard extends StatelessWidget {
-  final String driverName;
+  final String driver;
   final String phoneNumber;
   final String vehicleNumber;
   final String dutyType;
-  final VoidCallback onViewProfile;
+  final Map<String, dynamic>? driverProfile;
 
   const DriverDetailsCard({
     super.key,
-    required this.driverName,
+    required this.driver,
     required this.phoneNumber,
     required this.vehicleNumber,
     required this.dutyType,
-    required this.onViewProfile,
+    required this.driverProfile,
   });
+
+  // Future<void> makePhoneCall(String phoneNumber) async {
+  //   final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
+
+  //   if (await canLaunchUrl(phoneUri)) {
+  //     await launchUrl(phoneUri);
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -26,10 +33,13 @@ class DriverDetailsCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              _infoItem('Driver Name', driverName),
+              _infoItem('Driver Name', driver),
+
               GestureDetector(
                 onTap: () {
-                  _showDriverProfileDialog(context);
+                  if (driverProfile == null) return;
+
+                  _showDriverProfileDialog(context, driverProfile!);
                 },
                 child: Text(
                   'View Profile',
@@ -40,7 +50,47 @@ class DriverDetailsCard extends StatelessWidget {
                   ),
                 ),
               ),
-              _infoItem('Phone Number', phoneNumber, alignRight: true),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      'Phone Number',
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    SizedBox(width: 4.w),
+                    GestureDetector(
+                      onTap: () {},
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.phone,
+                            color: AppColors.primary,
+                            size: 13.sp,
+                          ),
+
+                          SizedBox(width: 2.w),
+
+                          Text(
+                            phoneNumber,
+                            style: TextStyle(
+                              fontSize: 11.sp,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
 
@@ -57,7 +107,24 @@ class DriverDetailsCard extends StatelessWidget {
     );
   }
 
-  void _showDriverProfileDialog(BuildContext context) {
+  void _showDriverProfileDialog(
+    BuildContext context,
+    Map<String, dynamic> driverData,
+  ) {
+    final driverName =
+        driverData['driver_name']?.toString() ??
+        driverData['full_name']?.toString() ??
+        driver;
+
+    final mobile = driverData['cell_number']?.toString() ?? phoneNumber;
+    final trips = driverData['custom_no_of_trips']?.toString() ?? '-';
+    final ratingValue =
+        double.tryParse(driverData['custom_rating']?.toString() ?? '0') ?? 0.0;
+
+    final rating = (ratingValue * 5).toStringAsFixed(1);
+    final experience =
+        driverData['custom_years_of_driving_experience']?.toString() ?? '-';
+
     showDialog(
       context: context,
       builder: (context) {
@@ -101,7 +168,7 @@ class DriverDetailsCard extends StatelessWidget {
                 SizedBox(height: 6.h),
 
                 Text(
-                  phoneNumber,
+                  mobile,
                   style: TextStyle(
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w600,
@@ -109,24 +176,24 @@ class DriverDetailsCard extends StatelessWidget {
                   ),
                 ),
 
-                SizedBox(height: 20.h),
+                SizedBox(height: 16.h),
 
                 _driverInfoRow(
-                  icon: Icons.directions_car,
-                  title: 'Driving Experience',
-                  value: '5 Years',
+                  icon: Icons.route,
+                  title: 'No. of Trips',
+                  value: trips,
                 ),
 
                 _driverInfoRow(
                   icon: Icons.star,
-                  title: 'Driver Rating',
-                  value: '4.8 / 5',
+                  title: 'Rating',
+                  value: '$rating / 5',
                 ),
 
                 _driverInfoRow(
-                  icon: Icons.route,
-                  title: 'Trips Completed',
-                  value: '250 Trips',
+                  icon: Icons.drive_eta,
+                  title: 'Driving Experience',
+                  value: '$experience Years',
                 ),
 
                 SizedBox(height: 18.h),
@@ -214,6 +281,13 @@ class DriverDetailsCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: child,
     );
@@ -233,7 +307,7 @@ class DriverDetailsCard extends StatelessWidget {
           SizedBox(height: 4.h),
           Text(
             value,
-            style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 11.sp, fontWeight: FontWeight.bold),
           ),
         ],
       ),

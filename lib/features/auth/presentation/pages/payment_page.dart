@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:voyzo/core/constants/app_colors.dart';
+import 'package:voyzo/features/auth/presentation/provider/user_provider.dart';
 import 'package:voyzo/features/auth/widgets/customer_bottom_navbar.dart';
 
 class PaymentPage extends StatelessWidget {
@@ -34,17 +36,36 @@ class PaymentPage extends StatelessWidget {
             onTap: () {
               context.go('/customer_profile');
             },
-            child: CircleAvatar(
-              radius: 14.r,
-              backgroundColor: AppColors.primary.withOpacity(0.2),
-              child: Text(
-                'RK',
-                style: TextStyle(
-                  fontSize: 10.sp,
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+            child: Consumer(
+              builder: (context, ref, child) {
+                final user = ref.watch(userProvider);
+
+                final fullName = user?.fullName ?? '';
+
+                final nameParts = fullName.trim().split(' ');
+
+                String initials = '';
+
+                if (nameParts.length >= 2) {
+                  initials = '${nameParts[0][0]}${nameParts[1][0]}'
+                      .toUpperCase();
+                } else if (nameParts.isNotEmpty && nameParts[0].isNotEmpty) {
+                  initials = nameParts[0][0].toUpperCase();
+                }
+
+                return CircleAvatar(
+                  radius: 14.r,
+                  backgroundColor: AppColors.primary.withOpacity(0.2),
+                  child: Text(
+                    initials,
+                    style: TextStyle(
+                      fontSize: 10.sp,
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                );
+              },
             ),
           ),
 
