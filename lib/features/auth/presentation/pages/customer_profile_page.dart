@@ -5,9 +5,18 @@ import 'package:voyzo/core/constants/app_colors.dart';
 import 'package:voyzo/features/auth/widgets/customer_bottom_navbar.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voyzo/features/auth/presentation/provider/user_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class CustomerProfilePage extends StatelessWidget {
   const CustomerProfilePage({super.key});
+
+  Future<void> _openWebsite() async {
+    final Uri url = Uri.parse(
+      'https://www.voyzotraveltech.com/about-voyzo-traveltech/',
+    ); // Replace with actual URL
+
+    await launchUrl(url, mode: LaunchMode.externalApplication);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -146,6 +155,7 @@ class CustomerProfilePage extends StatelessWidget {
                 child: Column(
                   children: [
                     _profileItem(context, 'About Voyzo'),
+
                     _divider(),
 
                     _profileItem(context, 'Support'),
@@ -182,7 +192,9 @@ class CustomerProfilePage extends StatelessWidget {
   }) {
     return InkWell(
       onTap: () {
-        if (title == "Change Password") {
+        if (title == "About Voyzo") {
+          _openWebsite();
+        } else if (title == "Change Password") {
           context.push('/set_new_password', extra: {'isChangePassword': true});
         } else if (title == "Logout") {
           context.go('/customer_login');
