@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:voyzo/features/bookings/presentation/providers/driver_provider.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../shared/mock_data/mock_data.dart';
 import '../../../../shared/providers/auth_provider.dart';
@@ -15,7 +16,15 @@ class ProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final driver = MockData.driver;
+    final driver = ref.watch(driverProvider);
+    final initials =
+        driver?.fullName
+            .split(' ')
+            .where((e) => e.isNotEmpty)
+            .map((e) => e[0])
+            .take(2)
+            .join() ??
+        'DR';
     return Scaffold(
       backgroundColor: AppColors.greyBackground,
       appBar: const VoyzoAppBar(title: 'Profile', showProfile: false),
@@ -32,7 +41,7 @@ class ProfileScreen extends ConsumerWidget {
                     radius: 52.r,
                     backgroundColor: AppColors.avatarGrey,
                     child: Text(
-                      driver['initials'] as String,
+                      initials,
                       style: TextStyle(
                         fontSize: 36.sp,
                         fontWeight: FontWeight.w600,
@@ -58,7 +67,7 @@ class ProfileScreen extends ConsumerWidget {
             ),
             SizedBox(height: 14.h),
             Text(
-              driver['name'] as String,
+              driver?.fullName ?? '',
               style: TextStyle(
                 fontSize: 20.sp,
                 fontWeight: FontWeight.w600,
@@ -67,7 +76,7 @@ class ProfileScreen extends ConsumerWidget {
             ),
             SizedBox(height: 4.h),
             Text(
-              driver['phone'] as String,
+              driver?.mobileNo ?? '',
               style: TextStyle(fontSize: 14.sp, color: AppColors.labelGrey),
             ),
             SizedBox(height: 28.h),
@@ -89,7 +98,7 @@ class ProfileScreen extends ConsumerWidget {
                         ),
                         SizedBox(height: 4.h),
                         Text(
-                          driver['supportPhone'] as String,
+                          '+91 1234567890',
                           style: TextStyle(
                             fontSize: 13.sp,
                             color: AppColors.labelGrey,
@@ -119,8 +128,11 @@ class ProfileScreen extends ConsumerWidget {
                   ref.read(isLoggedInProvider.notifier).state = false;
                   context.go('/login');
                 },
-                leading: Icon(Icons.logout_rounded,
-                    color: AppColors.textPrimary, size: 22.sp),
+                leading: Icon(
+                  Icons.logout_rounded,
+                  color: AppColors.textPrimary,
+                  size: 22.sp,
+                ),
                 title: Text(
                   'Logout',
                   style: TextStyle(
@@ -129,8 +141,11 @@ class ProfileScreen extends ConsumerWidget {
                     color: AppColors.textPrimary,
                   ),
                 ),
-                trailing: Icon(Icons.chevron_right_rounded,
-                    color: AppColors.labelGrey, size: 22.sp),
+                trailing: Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppColors.labelGrey,
+                  size: 22.sp,
+                ),
               ),
             ),
           ],

@@ -63,7 +63,13 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/set_new_password',
-      builder: (context, state) => const SetNewPasswordPage(),
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+
+        return SetNewPasswordPage(
+          isChangePassword: extra?['isChangePassword'] ?? false,
+        );
+      },
     ),
     GoRoute(
       path: '/otp_login',
@@ -92,11 +98,7 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/customer_booking_details',
-      builder: (context, state) {
-        final data = state.extra as Map<String, String>?;
-
-        return CustomerBookingDetailsPage(status: data?['status'] ?? 'pending');
-      },
+      builder: (context, state) => const CustomerBookingDetailsPage(),
     ),
     GoRoute(
       path: '/cancel_booking',
@@ -153,20 +155,23 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/trip-details',
-      builder: (context, state) =>
-          TripDetailsScreen(bookingId: state.extra as String),
+      builder: (context, state) {
+        return const TripDetailsScreen();
+      },
     ),
     GoRoute(
       path: '/add-expense',
       builder: (context, state) {
         final extra = state.extra;
+
         if (extra is Map) {
           return AddExpenseScreen(
-            bookingId: extra['bookingId'] as String,
-            expenseId: extra['expenseId'] as String?,
+            bookingId: extra['bookingId']?.toString() ?? '',
+            expenseId: extra['expenseId']?.toString(),
           );
         }
-        return AddExpenseScreen(bookingId: extra as String);
+
+        return AddExpenseScreen(bookingId: extra?.toString() ?? '');
       },
     ),
     GoRoute(

@@ -3,18 +3,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:voyzo/features/auth/widgets/customer_bottom_navbar.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voyzo/features/auth/data/auth_api.dart';
+import 'package:voyzo/features/auth/presentation/provider/user_provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../shared/widgets/app_button.dart';
 
-class HomePage extends StatefulWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  ConsumerState<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends ConsumerState<HomePage> {
   bool isLocal = true;
   bool isAnimating = false;
 
@@ -25,14 +28,20 @@ class _HomePageState extends State<HomePage> {
   String? passengers;
   String? typeOfUse;
 
+  DateTime? pickupDateTimeValue;
+  DateTime? dropDateTimeValue;
+
   final guestNameController = TextEditingController();
   final mobileController = TextEditingController();
   final dateTimeController = TextEditingController();
+  final dropDateTimeController = TextEditingController();
   final pickupController = TextEditingController();
   final dropController = TextEditingController();
 
   String? errorText;
   String? mobileNoError;
+
+  final authApi = AuthApi();
 
   @override
   void initState() {
@@ -57,11 +66,80 @@ class _HomePageState extends State<HomePage> {
 
     if (pickedTime == null) return;
 
-    dateTimeController.text =
-        '${pickedDate.day}/${pickedDate.month}/${pickedDate.year}  ${pickedTime.format(context)}';
+    setState(() {
+      pickupDateTimeValue = DateTime(
+        pickedDate.year,
+        pickedDate.month,
+        pickedDate.day,
+        pickedTime.hour,
+        pickedTime.minute,
+      );
+
+      dateTimeController.text = formatForFrappe(pickupDateTimeValue!);
+
+      errorText = null;
+    });
   }
 
-  void submitBooking() {
+  Future<void> dropDateTime() async {
+    setState(() {
+      errorText = null;
+    });
+
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: pickupDateTimeValue ?? DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2100),
+    );
+
+    if (pickedDate == null) return;
+
+    final TimeOfDay? pickedTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+
+    if (pickedTime == null) return;
+
+    final selectedDropDateTime = DateTime(
+      pickedDate.year,
+      pickedDate.month,
+      pickedDate.day,
+      pickedTime.hour,
+      pickedTime.minute,
+    );
+
+    if (pickupDateTimeValue != null &&
+        selectedDropDateTime.isBefore(pickupDateTimeValue!)) {
+      print('Pickup: $pickupDateTimeValue');
+      print('Drop: $selectedDropDateTime');
+      setState(() {
+        dropDateTimeValue = null;
+        dropDateTimeController.clear();
+        errorText = 'Drop date time must be after pickup date time';
+      });
+      return;
+    }
+
+    setState(() {
+      dropDateTimeValue = selectedDropDateTime;
+      dropDateTimeController.text = formatForFrappe(dropDateTimeValue!);
+      errorText = null;
+    });
+  }
+
+  String formatForFrappe(DateTime dateTime) {
+    String twoDigit(int n) => n.toString().padLeft(2, '0');
+
+    return '${dateTime.year}-'
+        '${twoDigit(dateTime.month)}-'
+        '${twoDigit(dateTime.day)} '
+        '${twoDigit(dateTime.hour)}:'
+        '${twoDigit(dateTime.minute)}:00';
+  }
+
+  Future<void> submitBooking() async {
     setState(() {
       errorText = null;
       mobileNoError = null;
@@ -73,6 +151,7 @@ class _HomePageState extends State<HomePage> {
         vehicleType == null ||
         passengers == null ||
         dateTimeController.text.trim().isEmpty ||
+        dropDateTimeController.text.trim().isEmpty ||
         pickupController.text.trim().isEmpty ||
         dropController.text.trim().isEmpty ||
         typeOfUse == null) {
@@ -89,10 +168,41 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    context.push(
-      '/booking_success',
-      extra: {'dateTime': dateTimeController.text.trim()},
+    final user = ref.read(userProvider);
+
+    if (user == null || user.customerId.isEmpty) {
+      setState(() {
+        errorText = 'Customer data not found. Please login again.';
+      });
+      return;
+    }
+
+    final success = await authApi.createBookingRequest(
+      customerId: user.customerId,
+      guestName: guestNameController.text.trim(),
+      guestPhoneNumber: '+91${mobileController.text.trim()}',
+      isLocal: isLocal,
+      subTripType: typeOfUse!,
+      fromDateTime: dateTimeController.text.trim(),
+      toDateTime: dropDateTimeController.text.trim(),
+      vehicleType: vehicleType!,
+      pickupLocation: pickupController.text.trim(),
+      dropOffLocation: dropController.text.trim(),
+      passengers: passengers!,
     );
+
+    if (!mounted) return;
+
+    if (success) {
+      context.push(
+        '/booking_success',
+        extra: {'dateTime': dateTimeController.text.trim()},
+      );
+    } else {
+      setState(() {
+        errorText = 'Booking failed. Please try again.';
+      });
+    }
   }
 
   InputDecoration fieldDecoration(String hint) {
@@ -128,6 +238,7 @@ class _HomePageState extends State<HomePage> {
     guestNameController.dispose();
     mobileController.dispose();
     dateTimeController.dispose();
+    dropDateTimeController.dispose();
     pickupController.dispose();
     dropController.dispose();
     super.dispose();
@@ -138,7 +249,6 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       resizeToAvoidBottomInset: true,
-
       appBar: AppBar(
         title: const Text('Booking'),
         centerTitle: true,
@@ -152,38 +262,60 @@ class _HomePageState extends State<HomePage> {
             onTap: () {
               context.go('/customer_profile');
             },
-            child: CircleAvatar(
-              radius: 14.r,
-              backgroundColor: AppColors.primary.withOpacity(0.2),
-              child: Text(
-                'RK',
-                style: TextStyle(
-                  fontSize: 10.sp,
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+            child: Consumer(
+              builder: (context, ref, child) {
+                final user = ref.watch(userProvider);
+                final fullName = user?.fullName ?? '';
+                final nameParts = fullName.trim().split(' ');
+
+                String initials = '';
+
+                if (nameParts.length >= 2) {
+                  initials = '${nameParts[0][0]}${nameParts[1][0]}'
+                      .toUpperCase();
+                } else if (nameParts.isNotEmpty && nameParts[0].isNotEmpty) {
+                  initials = nameParts[0][0].toUpperCase();
+                }
+
+                return CircleAvatar(
+                  radius: 14.r,
+                  backgroundColor: AppColors.primary.withOpacity(0.2),
+                  child: Text(
+                    initials,
+                    style: TextStyle(
+                      fontSize: 10.sp,
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                );
+              },
             ),
           ),
-          SizedBox(width: 5.w),
+          SizedBox(width: 12.w),
         ],
       ),
-
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: Padding(
           padding: EdgeInsets.all(18.w),
           child: Column(
             children: [
               SizedBox(height: 5.h),
 
-              Text(
-                'Welcome {User Name},\nBook your Trip.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 22.sp,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
+              Consumer(
+                builder: (context, ref, child) {
+                  final user = ref.watch(userProvider);
+
+                  return Text(
+                    'Welcome ${user?.fullName ?? ''}\nBook your Trip.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 22.sp,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  );
+                },
               ),
 
               SizedBox(height: 18.h),
@@ -203,15 +335,13 @@ class _HomePageState extends State<HomePage> {
 
               SizedBox(height: 20.h),
 
-              SizedBox(
-                height: 650.h,
+              Expanded(
                 child: PageView(
                   controller: pageController,
                   physics: const NeverScrollableScrollPhysics(),
-                  onPageChanged: (index) {},
                   children: [
-                    _bookingForm(local: true),
-                    _bookingForm(local: false),
+                    SingleChildScrollView(child: _bookingForm(local: true)),
+                    SingleChildScrollView(child: _bookingForm(local: false)),
                   ],
                 ),
               ),
@@ -219,7 +349,6 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ),
-
       bottomNavigationBar: const CustomerBottomNavBar(currentIndex: 0),
     );
   }
@@ -359,7 +488,18 @@ class _HomePageState extends State<HomePage> {
           readOnly: true,
           onTap: pickDateTime,
           decoration: fieldDecoration(
-            'Date & Time',
+            'From Date & Time',
+          ).copyWith(suffixIcon: const Icon(Icons.calendar_month)),
+        ),
+
+        SizedBox(height: 10.h),
+
+        TextField(
+          controller: dropDateTimeController,
+          readOnly: true,
+          onTap: dropDateTime,
+          decoration: fieldDecoration(
+            'To Date & Time',
           ).copyWith(suffixIcon: const Icon(Icons.calendar_month)),
         ),
 
@@ -395,9 +535,11 @@ class _HomePageState extends State<HomePage> {
             padding: EdgeInsets.symmetric(horizontal: 16.w),
           ),
           items: const [
-            DropdownItem(value: 'transfer', child: Text('Transfer')),
-            DropdownItem(value: '8hr', child: Text('8 hrs/km')),
-            DropdownItem(value: '12hr', child: Text('12 hrs/km')),
+            DropdownItem(value: 'One way', child: Text('One way')),
+            DropdownItem(value: 'Round Trip', child: Text('Round Trip')),
+            DropdownItem(value: 'Multi City', child: Text('Multi City')),
+            DropdownItem(value: '8Hr/80Km', child: Text('8Hr/80Km')),
+            DropdownItem(value: '12Hr/120Km', child: Text('12Hr/120Km')),
           ],
           onChanged: (value) {
             setState(() {
@@ -420,6 +562,8 @@ class _HomePageState extends State<HomePage> {
         SizedBox(height: 20.h),
 
         AppButton(label: 'Submit', onTap: submitBooking),
+
+        SizedBox(height: 20.h),
       ],
     );
   }

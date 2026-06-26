@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
-import '../mock_data/mock_data.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../features/bookings/presentation/providers/driver_provider.dart';
 
 /// Figma driver top bar (nodes 350:1212 / 350:1255 / 354:421): a white bar with
 /// a soft drop shadow, a centred title, an optional back arrow on the left and
 /// the circular "AD" driver avatar on the right.
-class VoyzoAppBar extends StatelessWidget implements PreferredSizeWidget {
+class VoyzoAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final String title;
   final bool showProfile;
   final bool showBack;
@@ -22,7 +23,7 @@ class VoyzoAppBar extends StatelessWidget implements PreferredSizeWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return AppBar(
       backgroundColor: AppColors.surface,
       surfaceTintColor: Colors.transparent,
@@ -59,10 +60,15 @@ class VoyzoAppBar extends StatelessWidget implements PreferredSizeWidget {
                 radius: 16.r,
                 backgroundColor: AppColors.avatarGrey,
                 child: Text(
-                  MockData.driver['initials'] as String,
+                  (ref.watch(driverProvider)?.fullName ?? 'DR')
+                      .split(' ')
+                      .where((e) => e.isNotEmpty)
+                      .map((e) => e[0])
+                      .take(2)
+                      .join(),
                   style: TextStyle(
                     color: AppColors.primary,
-                    fontSize: 13.sp,
+                    fontSize: 12.sp,
                     fontWeight: FontWeight.w600,
                   ),
                 ),

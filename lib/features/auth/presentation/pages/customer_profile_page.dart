@@ -3,6 +3,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:voyzo/core/constants/app_colors.dart';
 import 'package:voyzo/features/auth/widgets/customer_bottom_navbar.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voyzo/features/auth/presentation/provider/user_provider.dart';
 
 class CustomerProfilePage extends StatelessWidget {
   const CustomerProfilePage({super.key});
@@ -28,17 +30,35 @@ class CustomerProfilePage extends StatelessWidget {
           ),
         ),
         actions: [
-          CircleAvatar(
-            radius: 14.r,
-            backgroundColor: AppColors.primary.withOpacity(0.2),
-            child: Text(
-              'RK',
-              style: TextStyle(
-                fontSize: 10.sp,
-                color: AppColors.primary,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+          Consumer(
+            builder: (context, ref, child) {
+              final user = ref.watch(userProvider);
+
+              final fullName = user?.fullName ?? '';
+
+              final nameParts = fullName.trim().split(' ');
+
+              String initials = '';
+
+              if (nameParts.length >= 2) {
+                initials = '${nameParts[0][0]}${nameParts[1][0]}'.toUpperCase();
+              } else if (nameParts.isNotEmpty && nameParts[0].isNotEmpty) {
+                initials = nameParts[0][0].toUpperCase();
+              }
+
+              return CircleAvatar(
+                radius: 14.r,
+                backgroundColor: AppColors.primary.withOpacity(0.2),
+                child: Text(
+                  initials,
+                  style: TextStyle(
+                    fontSize: 10.sp,
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              );
+            },
           ),
           SizedBox(width: 14.w),
         ],
@@ -49,39 +69,62 @@ class CustomerProfilePage extends StatelessWidget {
           children: [
             SizedBox(height: 35.h),
 
-            CircleAvatar(
-              radius: 50.r,
-              backgroundColor: const Color(0xFFBDBDBD),
-              child: Text(
-                "AM",
-                style: TextStyle(
-                  fontSize: 28.sp,
-                  color: Colors.white,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
+            Consumer(
+              builder: (context, ref, child) {
+                final user = ref.watch(userProvider);
 
-            SizedBox(height: 15.h),
+                final fullName = user?.fullName ?? '';
 
-            Text(
-              "Rakesh Kumar",
-              style: TextStyle(
-                color: Colors.orange,
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
+                final nameParts = fullName.trim().split(' ');
 
-            SizedBox(height: 3.h),
+                String initials = '';
 
-            Text(
-              "+8834567 567",
-              style: TextStyle(
-                color: const Color(0xFF9FA3B5),
-                fontSize: 13.sp,
-                fontWeight: FontWeight.w600,
-              ),
+                if (nameParts.length >= 2) {
+                  initials = '${nameParts[0][0]}${nameParts[1][0]}'
+                      .toUpperCase();
+                } else if (nameParts.isNotEmpty && nameParts[0].isNotEmpty) {
+                  initials = nameParts[0][0].toUpperCase();
+                }
+
+                return Column(
+                  children: [
+                    CircleAvatar(
+                      radius: 50.r,
+                      backgroundColor: const Color(0xFFBDBDBD),
+                      child: Text(
+                        initials,
+                        style: TextStyle(
+                          fontSize: 28.sp,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+
+                    SizedBox(height: 15.h),
+
+                    Text(
+                      fullName,
+                      style: TextStyle(
+                        color: Colors.orange,
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+
+                    SizedBox(height: 3.h),
+
+                    Text(
+                      user?.mobileNo ?? '',
+                      style: TextStyle(
+                        color: const Color(0xFF9FA3B5),
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
 
             SizedBox(height: 20.h),
@@ -140,7 +183,7 @@ class CustomerProfilePage extends StatelessWidget {
     return InkWell(
       onTap: () {
         if (title == "Change Password") {
-          context.go('/');
+          context.push('/set_new_password', extra: {'isChangePassword': true});
         } else if (title == "Logout") {
           context.go('/customer_login');
         }
