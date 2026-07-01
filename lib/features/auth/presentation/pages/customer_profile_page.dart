@@ -13,7 +13,7 @@ class CustomerProfilePage extends StatelessWidget {
   Future<void> _openWebsite() async {
     final Uri url = Uri.parse(
       'https://www.voyzotraveltech.com/about-voyzo-traveltech/',
-    ); // Replace with actual URL
+    );
 
     await launchUrl(url, mode: LaunchMode.externalApplication);
   }
