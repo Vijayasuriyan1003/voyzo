@@ -6,6 +6,7 @@ import 'package:voyzo/features/auth/widgets/customer_bottom_navbar.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voyzo/features/auth/presentation/provider/user_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:voyzo/utils/call_helper.dart';
 
 class CustomerProfilePage extends StatelessWidget {
   const CustomerProfilePage({super.key});
@@ -194,10 +195,118 @@ class CustomerProfilePage extends StatelessWidget {
       onTap: () {
         if (title == "About Voyzo") {
           _openWebsite();
+        } else if (title == "Support") {
+          CallHelper.makePhoneCall(context, '+918928262991');
         } else if (title == "Change Password") {
           context.push('/set_new_password', extra: {'isChangePassword': true});
         } else if (title == "Logout") {
-          context.go('/customer_login');
+          showDialog(
+            context: context,
+            builder: (dialogContext) {
+              return Dialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20.r),
+                ),
+                child: Padding(
+                  padding: EdgeInsets.all(24.w),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircleAvatar(
+                        radius: 28.r,
+                        backgroundColor: const Color.fromARGB(
+                          255,
+                          244,
+                          155,
+                          54,
+                        ).withOpacity(0.1),
+                        child: Icon(
+                          Icons.logout_rounded,
+                          color: AppColors.primary,
+                          size: 30.sp,
+                        ),
+                      ),
+
+                      SizedBox(height: 18.h),
+
+                      Text(
+                        'Logout',
+                        style: TextStyle(
+                          fontSize: 20.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+
+                      SizedBox(height: 10.h),
+
+                      Text(
+                        'Are you sure you want to logout from your account?',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          color: Colors.grey.shade600,
+                          height: 1.4,
+                        ),
+                      ),
+
+                      SizedBox(height: 24.h),
+
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () {
+                                Navigator.pop(dialogContext);
+                              },
+                              style: OutlinedButton.styleFrom(
+                                minimumSize: Size(double.infinity, 48.h),
+                                side: BorderSide(color: Colors.grey.shade400),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12.r),
+                                ),
+                              ),
+                              child: Text(
+                                'No',
+                                style: TextStyle(
+                                  color: Colors.grey.shade700,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          SizedBox(width: 12.w),
+
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () {
+                                Navigator.pop(dialogContext);
+                                context.go('/customer_login');
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                minimumSize: Size(double.infinity, 48.h),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12.r),
+                                ),
+                              ),
+                              child: const Text(
+                                'Yes',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
         }
       },
       child: Padding(

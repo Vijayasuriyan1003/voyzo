@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:voyzo/features/bookings/presentation/providers/driver_provider.dart';
+import 'package:voyzo/utils/call_helper.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../shared/mock_data/mock_data.dart';
 import '../../../../shared/providers/auth_provider.dart';
@@ -97,8 +98,9 @@ class ProfileScreen extends ConsumerWidget {
                           ),
                         ),
                         SizedBox(height: 4.h),
+
                         Text(
-                          '+91 1234567890',
+                          '+91 8928262991',
                           style: TextStyle(
                             fontSize: 13.sp,
                             color: AppColors.labelGrey,
@@ -114,7 +116,18 @@ class ProfileScreen extends ConsumerWidget {
                       color: AppColors.primary,
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(Icons.call, color: Colors.white, size: 20.sp),
+                    child: GestureDetector(
+                      onTap: () {
+                        CallHelper.makePhoneCall(context, '+918928262991');
+                      },
+                      child: Center(
+                        child: Icon(
+                          Icons.call,
+                          color: Colors.white,
+                          size: 20.sp,
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -123,28 +136,156 @@ class ProfileScreen extends ConsumerWidget {
             // Logout.
             WhiteCard(
               padding: EdgeInsets.zero,
-              child: ListTile(
-                onTap: () {
-                  ref.read(isLoggedInProvider.notifier).state = false;
-                  context.go('/login');
-                },
-                leading: Icon(
-                  Icons.logout_rounded,
-                  color: AppColors.textPrimary,
-                  size: 22.sp,
-                ),
-                title: Text(
-                  'Logout',
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w500,
+              child: Material(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12.r),
+
+                child: ListTile(
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (dialogContext) {
+                        return Dialog(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20.r),
+                          ),
+                          child: Padding(
+                            padding: EdgeInsets.all(24.w),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                CircleAvatar(
+                                  radius: 28.r,
+                                  backgroundColor: const Color.fromARGB(
+                                    255,
+                                    244,
+                                    155,
+                                    54,
+                                  ).withOpacity(0.1),
+                                  child: Icon(
+                                    Icons.logout_rounded,
+                                    color: AppColors.primary,
+                                    size: 30.sp,
+                                  ),
+                                ),
+
+                                SizedBox(height: 18.h),
+
+                                Text(
+                                  'Logout',
+                                  style: TextStyle(
+                                    fontSize: 20.sp,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+
+                                SizedBox(height: 10.h),
+
+                                Text(
+                                  'Are you sure you want to logout from your account?',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 14.sp,
+                                    color: Colors.grey.shade600,
+                                    height: 1.4,
+                                  ),
+                                ),
+
+                                SizedBox(height: 24.h),
+
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: OutlinedButton(
+                                        onPressed: () {
+                                          Navigator.pop(dialogContext);
+                                        },
+                                        style: OutlinedButton.styleFrom(
+                                          minimumSize: Size(
+                                            double.infinity,
+                                            48.h,
+                                          ),
+                                          side: BorderSide(
+                                            color: Colors.grey.shade400,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              12.r,
+                                            ),
+                                          ),
+                                        ),
+                                        child: Text(
+                                          'No',
+                                          style: TextStyle(
+                                            color: Colors.grey.shade700,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+
+                                    SizedBox(width: 12.w),
+
+                                    Expanded(
+                                      child: ElevatedButton(
+                                        onPressed: () {
+                                          Navigator.pop(dialogContext);
+                                          ref
+                                                  .read(
+                                                    isLoggedInProvider.notifier,
+                                                  )
+                                                  .state =
+                                              false;
+                                          context.go('/login');
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppColors.primary,
+                                          minimumSize: Size(
+                                            double.infinity,
+                                            48.h,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              12.r,
+                                            ),
+                                          ),
+                                        ),
+                                        child: const Text(
+                                          'Yes',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                  leading: Icon(
+                    Icons.logout_rounded,
                     color: AppColors.textPrimary,
+                    size: 22.sp,
                   ),
-                ),
-                trailing: Icon(
-                  Icons.chevron_right_rounded,
-                  color: AppColors.labelGrey,
-                  size: 22.sp,
+                  title: Text(
+                    'Logout',
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  trailing: Icon(
+                    Icons.chevron_right_rounded,
+                    color: AppColors.labelGrey,
+                    size: 22.sp,
+                  ),
                 ),
               ),
             ),
