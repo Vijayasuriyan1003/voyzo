@@ -87,9 +87,12 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/booking_success',
       builder: (context, state) {
-        final data = state.extra as Map<String, String>;
+        final data = state.extra as Map<String, dynamic>?;
 
-        return BookingSuccessPage(dateTime: data['dateTime'] ?? '');
+        return BookingSuccessPage(
+          dateTime: data?['dateTime'] ?? '',
+          bookingRequestId: data?['bookingRequestId'] ?? '',
+        );
       },
     ),
     GoRoute(
@@ -98,7 +101,15 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/customer_booking_details',
-      builder: (context, state) => const CustomerBookingDetailsPage(),
+      builder: (context, state) {
+        final data = state.extra as Map<String, dynamic>?;
+
+        return CustomerBookingDetailsPage(
+          doctype: data?['doctype']?.toString() ?? 'Booking Request',
+          id: data?['id']?.toString() ?? '',
+          status: data?['status']?.toString() ?? 'pending',
+        );
+      },
     ),
     GoRoute(
       path: '/cancel_booking',

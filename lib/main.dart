@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:voyzo/routes/app_router.dart';
 import 'package:voyzo/theme/app_theme.dart';
+import 'package:voyzo/shared/widgets/internet_status_wrapper.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,6 +34,9 @@ class VoyzoApp extends StatelessWidget {
         darkTheme: AppTheme.dark,
         themeMode: ThemeMode.light,
         routerConfig: appRouter,
+        builder: (context, child) {
+          return InternetStatusWrapper(child: child ?? const SizedBox());
+        },
       ),
     );
   }

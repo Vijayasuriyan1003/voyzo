@@ -70,7 +70,7 @@ class AppButton extends StatelessWidget {
             foregroundColor: AppColors.primary,
             side: const BorderSide(color: AppColors.primary, width: 1.5),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12.r),
+              borderRadius: BorderRadius.circular(30.r),
             ),
           ),
           child: child,
