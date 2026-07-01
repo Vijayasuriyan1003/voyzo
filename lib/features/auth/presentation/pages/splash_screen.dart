@@ -40,7 +40,7 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> startAnimation() async {
-    await Future.delayed(const Duration(milliseconds: 800));
+    await Future.delayed(const Duration(milliseconds: 1200));
 
     await _controller.forward();
 
