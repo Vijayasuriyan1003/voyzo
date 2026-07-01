@@ -101,7 +101,7 @@ class BookingModel {
           return BookingStatus.cancelled;
 
         case 'open':
-          return BookingStatus.open;
+          return BookingStatus.upcoming;
 
         case 'booked':
           return BookingStatus.booked;

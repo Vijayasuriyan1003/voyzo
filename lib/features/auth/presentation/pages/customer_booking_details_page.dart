@@ -10,7 +10,16 @@ import 'package:voyzo/features/auth/widgets/driver_details_card.dart';
 import '../../../../core/constants/app_colors.dart';
 
 class CustomerBookingDetailsPage extends StatefulWidget {
-  const CustomerBookingDetailsPage({super.key});
+  final String doctype;
+  final String id;
+  final String status;
+
+  const CustomerBookingDetailsPage({
+    super.key,
+    required this.doctype,
+    required this.id,
+    required this.status,
+  });
 
   @override
   State<CustomerBookingDetailsPage> createState() =>
@@ -42,20 +51,39 @@ class _CustomerBookingDetailsPageState
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
+  void initState() {
+    super.initState();
+    booking = {};
+    loadBookingDetails();
+  }
 
-    final extra = GoRouterState.of(context).extra;
+  Future<void> loadBookingDetails() async {
+    Map<String, dynamic>? result;
 
-    if (extra is Map<String, dynamic>) {
-      booking = extra;
-      fetchDriverProfile();
+    if (widget.doctype == 'Booking Request') {
+      result = await AuthApi().getBookingRequestDetails(
+        bookingRequestId: widget.id,
+      );
     } else {
-      booking = {};
+      result = await AuthApi().getBookingDetails(bookingId: widget.id);
+    }
+
+    if (!mounted) return;
+
+    if (result != null) {
+      setState(() {
+        booking = {
+          ...result!,
+          'doctype': widget.doctype,
+          'ui_status': widget.status,
+        };
+      });
+
+      fetchDriverProfile();
     }
   }
 
-  String get status => booking['ui_status'] ?? 'pending';
+  String get status => booking['ui_status']?.toString() ?? widget.status;
 
   bool get isPending => status == 'pending';
   bool get isUpcoming => status == 'upcoming';
@@ -95,6 +123,12 @@ class _CustomerBookingDetailsPageState
 
   @override
   Widget build(BuildContext context) {
+    if (booking.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Booking Details')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
     final guestName = value('guest_name');
     final bookingId = value('name');
     final vehicleType = value('vehicle_type');
@@ -320,7 +354,41 @@ class _CustomerBookingDetailsPageState
               ),
             ),
           ),
-          if (isPending || isUpcoming)
+          if (isPending)
+            Container(
+              color: AppColors.background,
+              padding: EdgeInsets.fromLTRB(18.w, 10.h, 18.w, 18.h),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50.h,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        context.push('/cancel_booking');
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.grey.shade400,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30.r),
+                        ),
+                      ),
+                      child: Text(
+                        'Cancel Booking',
+                        style: TextStyle(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          if (isUpcoming)
             Container(
               color: AppColors.background,
               padding: EdgeInsets.fromLTRB(18.w, 10.h, 18.w, 18.h),
@@ -418,7 +486,11 @@ class _CustomerBookingDetailsPageState
         children: [
           Text(
             title,
-            style: TextStyle(fontSize: 11.sp, color: AppColors.textSecondary),
+            style: TextStyle(
+              fontSize: 11.sp,
+              // fontWeight: FontWeight.bold,
+              color: AppColors.textSecondary,
+            ),
           ),
           SizedBox(height: 4.h),
           Text(

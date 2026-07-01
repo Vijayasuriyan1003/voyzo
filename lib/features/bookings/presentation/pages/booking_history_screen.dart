@@ -46,32 +46,44 @@ class _BookingHistoryScreenState extends ConsumerState<BookingHistoryScreen> {
           ),
           SizedBox(height: 6.h),
           Expanded(
-            child: bookings.isEmpty
-                ? Center(
-                    child: Text(
-                      'No trips',
-                      style: TextStyle(
-                        fontSize: 15.sp,
-                        color: AppColors.labelGrey,
-                      ),
+            child: RefreshIndicator(
+              onRefresh: () async {
+                await ref.read(bookingProvider.notifier).fetchDriverBookings();
+              },
+              child: bookings.isEmpty
+                  ? ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        SizedBox(height: 250.h),
+                        Center(
+                          child: Text(
+                            'No trips',
+                            style: TextStyle(
+                              fontSize: 15.sp,
+                              color: AppColors.labelGrey,
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : ListView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: EdgeInsets.symmetric(vertical: 8.h),
+                      itemCount: bookings.length,
+                      itemBuilder: (context, index) {
+                        final b = bookings[index];
+                        return TripRouteCard(
+                          pickup: b.pickupLocation,
+                          drop: b.dropLocation,
+                          dateTime: DateFormat(
+                            'dd-MM-yyyy  HH:mm:ss',
+                          ).format(b.scheduledDateTime),
+                          status: b.status,
+                          onTap: () => _onTap(b),
+                        );
+                      },
                     ),
-                  )
-                : ListView.builder(
-                    padding: EdgeInsets.symmetric(vertical: 8.h),
-                    itemCount: bookings.length,
-                    itemBuilder: (context, index) {
-                      final b = bookings[index];
-                      return TripRouteCard(
-                        pickup: b.pickupLocation,
-                        drop: b.dropLocation,
-                        dateTime: DateFormat(
-                          'dd-MM-yyyy  HH:mm:ss',
-                        ).format(b.scheduledDateTime),
-                        status: b.status,
-                        onTap: () => _onTap(b),
-                      );
-                    },
-                  ),
+            ),
           ),
         ],
       ),
@@ -96,15 +108,23 @@ class _Filters extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 8.w),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _chip('All', 'all'),
-          SizedBox(width: 10.w),
-          _chip('Upcoming', 'upcoming'),
-          SizedBox(width: 10.w),
-          _chip('Completed', 'completed'),
-        ],
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        child: Row(
+          children: [
+            _chip('All', 'all'),
+            SizedBox(width: 10.w),
+
+            _chip('Upcoming', 'upcoming'),
+            SizedBox(width: 10.w),
+
+            _chip('Completed', 'completed'),
+            SizedBox(width: 10.w),
+
+            _chip('Cancelled', 'cancelled'),
+          ],
+        ),
       ),
     );
   }

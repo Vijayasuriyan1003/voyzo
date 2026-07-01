@@ -58,6 +58,11 @@ class _CustomerBookingHistoryPageState
           .where((booking) => booking['ui_status'] == 'upcoming')
           .toList();
     }
+    if (selectedFilter == 'Cancelled') {
+      return bookings
+          .where((booking) => booking['ui_status'] == 'cancelled')
+          .toList();
+    }
 
     return bookings
         .where((booking) => booking['ui_status'] == 'completed')
@@ -154,6 +159,7 @@ class _CustomerBookingHistoryPageState
                   filterButton('All'),
                   filterButton('Upcoming'),
                   filterButton('Completed'),
+                  filterButton('Cancelled'),
                 ],
               ),
             ),
@@ -227,7 +233,21 @@ class _CustomerBookingHistoryPageState
 
     return GestureDetector(
       onTap: () {
-        context.push('/customer_booking_details', extra: booking);
+        final doctype = booking['doctype']?.toString() ?? '';
+        final id = booking['name']?.toString() ?? '';
+        final status = booking['ui_status']?.toString() ?? 'pending';
+
+        if (id.isEmpty) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Booking ID not found')));
+          return;
+        }
+
+        context.push(
+          '/customer_booking_details',
+          extra: {'doctype': doctype, 'id': id, 'status': status},
+        );
       },
       child: Container(
         margin: EdgeInsets.only(bottom: 14.h),
@@ -262,7 +282,10 @@ class _CustomerBookingHistoryPageState
                   SizedBox(height: 4.h),
                   Text(
                     'to',
-                    style: TextStyle(fontSize: 11.sp, color: AppColors.primary),
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: AppColors.labelGrey,
+                    ),
                   ),
                   SizedBox(height: 4.h),
                   Text(

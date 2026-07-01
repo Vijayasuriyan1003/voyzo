@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:voyzo/utils/call_helper.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/confirm_dialog.dart';
@@ -11,6 +12,7 @@ import '../../data/models/booking_model.dart';
 import '../../data/models/expense_model.dart';
 import '../providers/booking_provider.dart';
 import '../widgets/detail_widgets.dart';
+import 'package:voyzo/utils/call_helper.dart';
 
 /// Figma driver "Trip Details" (node 350:1255 + states). Three states keyed off
 /// the booking status:
@@ -240,6 +242,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
       ),
     ),
     SizedBox(height: 20.h),
+
     AppButton(
       label: 'Trip Start',
       onTap: () => _tripStart(booking),
@@ -392,14 +395,21 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
             ),
             if (!completed) ...[
               SizedBox(width: 12.w),
-              Container(
-                width: 40.w,
-                height: 40.w,
-                decoration: const BoxDecoration(
-                  color: AppColors.primary,
-                  shape: BoxShape.circle,
+              GestureDetector(
+                onTap: () {
+                  CallHelper.makePhoneCall(context, booking.passengerPhone);
+                },
+                child: Container(
+                  width: 40.w,
+                  height: 40.w,
+                  decoration: const BoxDecoration(
+                    color: AppColors.primary,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Icon(Icons.call, color: Colors.white, size: 20.sp),
+                  ),
                 ),
-                child: Icon(Icons.call, color: Colors.white, size: 20.sp),
               ),
             ],
           ],
