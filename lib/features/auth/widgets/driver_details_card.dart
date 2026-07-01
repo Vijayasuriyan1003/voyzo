@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/constants/app_colors.dart';
+import 'package:voyzo/utils/call_helper.dart';
 
 class DriverDetailsCard extends StatelessWidget {
   final String driver;
@@ -32,21 +33,28 @@ class DriverDetailsCard extends StatelessWidget {
       child: Column(
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _infoItem('Driver Name', driver),
+              Expanded(child: _infoItem('Driver Name', driver)),
 
-              GestureDetector(
-                onTap: () {
-                  if (driverProfile == null) return;
-
-                  _showDriverProfileDialog(context, driverProfile!);
-                },
-                child: Text(
-                  'View Profile',
-                  style: TextStyle(
-                    color: AppColors.primary,
-                    fontSize: 13.sp,
-                    fontWeight: FontWeight.bold,
+              Expanded(
+                child: Center(
+                  child: Padding(
+                    padding: EdgeInsets.only(top: 0.h),
+                    child: GestureDetector(
+                      onTap: () {
+                        if (driverProfile == null) return;
+                        _showDriverProfileDialog(context, driverProfile!);
+                      },
+                      child: Text(
+                        'View Profile',
+                        style: TextStyle(
+                          color: AppColors.primary,
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -62,22 +70,32 @@ class DriverDetailsCard extends StatelessWidget {
                         color: AppColors.textSecondary,
                       ),
                     ),
-                    SizedBox(width: 4.w),
-                    GestureDetector(
-                      onTap: () {},
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.phone,
+
+                    SizedBox(height: 2.h),
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        InkWell(
+                          onTap: () {
+                            CallHelper.makePhoneCall(context, phoneNumber);
+                          },
+                          borderRadius: BorderRadius.circular(20.r),
+                          child: Icon(
+                            Icons.call,
+                            size: 16.sp,
                             color: AppColors.primary,
-                            size: 13.sp,
                           ),
+                        ),
 
-                          SizedBox(width: 2.w),
+                        SizedBox(width: 4.w),
 
-                          Text(
+                        GestureDetector(
+                          onTap: () {
+                            CallHelper.makePhoneCall(context, phoneNumber);
+                          },
+                          child: Text(
                             phoneNumber,
                             style: TextStyle(
                               fontSize: 11.sp,
@@ -85,8 +103,8 @@ class DriverDetailsCard extends StatelessWidget {
                               color: AppColors.primary,
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -98,8 +116,11 @@ class DriverDetailsCard extends StatelessWidget {
 
           Row(
             children: [
-              _infoItem('Vehicle Number', vehicleNumber),
-              _infoItem('Duty Type', dutyType, alignRight: true),
+              Expanded(child: _infoItem('Vehicle Number', vehicleNumber)),
+
+              Expanded(
+                child: _infoItem('Duty Type', dutyType, alignRight: true),
+              ),
             ],
           ),
         ],
