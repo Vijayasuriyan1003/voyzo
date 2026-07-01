@@ -42,6 +42,7 @@ dependencies:
 
   # launch website
   url_launcher: ^6.3.0
+  internet_connection_checker_plus: ^3.1.1
 
 dev_dependencies:
   flutter_launcher_icons: ^0.14.3
@@ -63,8 +64,29 @@ dev_dependencies:
   # Manage Cookie
   dio_cookie_manager: ^3.1.1
   cookie_jar: ^4.0.8
+  flutter_native_splash: ^2.4.8
+
+  # image selector
+  image_picker: ^1.1.2
+  image_cropper: ^9.1.0
 
 flutter:
   uses-material-design: true
   assets:
     - assets/images/
+
+flutter_native_splash:
+  color: "#FFFFFF"
+  image: assets/images/voyzo_logo_android12.png
+  android_gravity: center
+  ios_content_mode: center
+  fullscreen: true
+
+  android: true
+  ios: false
+  web: false
+
+  android_12:
+    color: "#FFFFFF"
+    image: assets/images/voyzo_logo_android12.png
+    icon_background_color: "#FE8A08" 
