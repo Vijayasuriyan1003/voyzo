@@ -109,7 +109,7 @@ class AuthApi {
 
   // to create booking
 
-  Future<bool> createBookingRequest({
+  Future<String?> createBookingRequest({
     required String customerId,
     required String guestName,
     required String guestPhoneNumber,
@@ -140,14 +140,41 @@ class AuthApi {
         },
       );
 
-      return response.statusCode == 200;
+      return response.data['data']['name'];
     } on DioException catch (e) {
       print('CREATE BOOKING ERROR STATUS: ${e.response?.statusCode}');
       print('CREATE BOOKING ERROR DATA: ${e.response?.data}');
-      return false;
+      return null;
     } catch (e) {
       print('CREATE BOOKING ERROR: $e');
-      return false;
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getBookingRequestDetails({
+    required String bookingRequestId,
+  }) async {
+    try {
+      final response = await DioClient.dio.get(
+        '/api/resource/Booking%20Request/$bookingRequestId',
+      );
+
+      final data = response.data['data'];
+
+      if (data is Map<String, dynamic>) {
+        return data;
+      }
+
+      if (data is List && data.isNotEmpty) {
+        return Map<String, dynamic>.from(data.first);
+      }
+    } on DioException catch (e) {
+      print('GET BOOKING REQUEST STATUS: ${e.response?.statusCode}');
+      print('GET BOOKING REQUEST DATA: ${e.response?.data}');
+      return null;
+    } catch (e) {
+      print('GET BOOKING REQUEST ERROR: $e');
+      return null;
     }
   }
 
@@ -177,33 +204,58 @@ class AuthApi {
         },
       );
 
+      final List<Map<String, dynamic>> bookingRequests =
+          (bookingRequestRes.data['data'] as List)
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList();
+
+      final List<Map<String, dynamic>> bookings =
+          (bookingRes.data['data'] as List)
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList();
+
+      final bookedRequestIds = bookings
+          .map((booking) => booking['booking_request']?.toString() ?? '')
+          .where((id) => id.isNotEmpty)
+          .toSet();
+
       final List<Map<String, dynamic>> allBookings = [];
 
-      for (final item in bookingRequestRes.data['data']) {
+      for (final item in bookingRequests) {
+        final requestId = item['name']?.toString() ?? '';
+
+        if (bookedRequestIds.contains(requestId)) {
+          continue;
+        }
         final status = item['status']?.toString() ?? '';
 
+        String uiStatus = 'pending';
+
         if (status == 'Open') {
-          allBookings.add({
-            ...item,
-            'doctype': 'Booking Request',
-            'ui_status': 'pending',
-          });
+          uiStatus = 'pending';
+        } else if (status == 'Cancelled') {
+          uiStatus = 'cancelled';
         }
+
+        allBookings.add({
+          ...item,
+          'doctype': 'Booking Request',
+          'ui_status': uiStatus,
+        });
       }
 
-      for (final item in bookingRes.data['data']) {
-        final tripstatus = item['trip_status']?.toString() ?? '';
+      for (final item in bookings) {
+        final tripStatus = item['trip_status']?.toString() ?? '';
 
-        String uiStatus;
+        String uiStatus = 'upcoming';
 
-        if (tripstatus == 'Open') {
+        if (tripStatus == 'Open') {
           uiStatus = 'upcoming';
-        } else if (tripstatus == 'Cancelled') {
-          uiStatus = 'cancelled';
-        } else if (tripstatus == 'Completed') {
+        } else if (tripStatus == 'Completed' ||
+            tripStatus == 'Trip Completed') {
           uiStatus = 'completed';
-        } else {
-          uiStatus = tripstatus.toLowerCase();
+        } else if (tripStatus == 'Cancelled') {
+          uiStatus = 'cancelled';
         }
 
         allBookings.add({...item, 'doctype': 'Booking', 'ui_status': uiStatus});
@@ -221,6 +273,21 @@ class AuthApi {
     } catch (e) {
       print('GET BOOKING HISTORY ERROR: $e');
       return [];
+    }
+  }
+
+  Future<Map<String, dynamic>?> getBookingDetails({
+    required String bookingId,
+  }) async {
+    try {
+      final response = await DioClient.dio.get(
+        '/api/resource/Booking/$bookingId',
+      );
+
+      return response.data['data'];
+    } catch (e) {
+      print('GET BOOKING DETAILS ERROR: $e');
+      return null;
     }
   }
 
@@ -270,12 +337,17 @@ class AuthApi {
       }
 
       final driver = data.first;
+      print('DRIVER DATA: $driver');
+      print('NO OF TRIPS: ${driver['custom_no_of_trips']}');
 
       return {
         'email': email,
         'driver_id': driver['name'] ?? '',
         'full_name': driver['full_name'] ?? '',
         'mobile_no': driver['cell_number'] ?? '',
+        'license_number': driver['license_number'] ?? '',
+        'custom_no_of_trips': driver['custom_no_of_trips'] ?? '',
+        'custom_rating': driver['custom_rating'] ?? '',
       };
     } on DioException catch (e) {
       print('STATUS: ${e.response?.statusCode}');
@@ -295,7 +367,7 @@ class AuthApi {
         queryParameters: {
           'filters': '[["driver_user_id","=","$driverEmail"]]',
           'fields':
-              '["name","from_date_time","to_date_time","guest_name","pick_up_location","drop_off_location","duty_type","trip_type","sub_trip_type", "trip_status"]',
+              '["name","from_date_time","to_date_time","guest_name","guest_phone_number","pick_up_location","drop_off_location","duty_type","trip_type","sub_trip_type", "trip_status"]',
           'limit_page_length': 100,
           'order_by': 'creation desc',
         },
