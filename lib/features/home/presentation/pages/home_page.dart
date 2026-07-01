@@ -40,6 +40,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   String? errorText;
   String? mobileNoError;
+  String? dropDateTimeError;
 
   final authApi = AuthApi();
 
@@ -110,22 +111,32 @@ class _HomePageState extends ConsumerState<HomePage> {
       pickedTime.minute,
     );
 
-    if (pickupDateTimeValue != null &&
-        selectedDropDateTime.isBefore(pickupDateTimeValue!)) {
-      print('Pickup: $pickupDateTimeValue');
-      print('Drop: $selectedDropDateTime');
-      setState(() {
-        dropDateTimeValue = null;
-        dropDateTimeController.clear();
-        errorText = 'Drop date time must be after pickup date time';
-      });
-      return;
+    if (pickupDateTimeValue != null) {
+      final pickup = pickupDateTimeValue!;
+      final drop = selectedDropDateTime;
+
+      // Same day
+      final isSameDay =
+          pickup.year == drop.year &&
+          pickup.month == drop.month &&
+          pickup.day == drop.day;
+
+      if ((isSameDay && !drop.isAfter(pickup)) ||
+          (!isSameDay && drop.isBefore(pickup))) {
+        setState(() {
+          dropDateTimeValue = null;
+          dropDateTimeController.clear();
+          dropDateTimeError =
+              'Drop date & time must be after pickup date & time.';
+        });
+        return;
+      }
     }
 
     setState(() {
       dropDateTimeValue = selectedDropDateTime;
       dropDateTimeController.text = formatForFrappe(dropDateTimeValue!);
-      errorText = null;
+      dropDateTimeError = null;
     });
   }
 
@@ -177,7 +188,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       return;
     }
 
-    final success = await authApi.createBookingRequest(
+    final bookingRequestId = await authApi.createBookingRequest(
       customerId: user.customerId,
       guestName: guestNameController.text.trim(),
       guestPhoneNumber: '+91${mobileController.text.trim()}',
@@ -193,10 +204,13 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     if (!mounted) return;
 
-    if (success) {
+    if (bookingRequestId != null && bookingRequestId.isNotEmpty) {
       context.push(
         '/booking_success',
-        extra: {'dateTime': dateTimeController.text.trim()},
+        extra: {
+          'dateTime': dateTimeController.text.trim(),
+          'bookingRequestId': bookingRequestId,
+        },
       );
     } else {
       setState(() {
@@ -306,14 +320,80 @@ class _HomePageState extends ConsumerState<HomePage> {
                 builder: (context, ref, child) {
                   final user = ref.watch(userProvider);
 
-                  return Text(
-                    'Welcome ${user?.fullName ?? ''}\nBook your Trip.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 22.sp,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
+                  final firstName =
+                      (user?.fullName?.trim().split(' ').first ?? '').trim();
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      RichText(
+                        textAlign: TextAlign.center,
+                        text: TextSpan(
+                          style: TextStyle(
+                            fontFamily: 'Poppins', // Optional
+                            height: 1.0,
+                          ),
+                          children: [
+                            TextSpan(
+                              text: 'Hi ',
+                              style: TextStyle(
+                                fontSize: 36.sp,
+                                fontWeight: FontWeight.w800,
+                                color: const Color(0xFF162544),
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                            TextSpan(
+                              text: '$firstName,',
+                              style: TextStyle(
+                                fontSize: 36.sp,
+                                fontWeight: FontWeight.w800,
+                                color: const Color(0xFF162544),
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      SizedBox(height: 4.h),
+
+                      RichText(
+                        textAlign: TextAlign.center,
+                        text: TextSpan(
+                          style: TextStyle(fontFamily: 'Poppins', height: 1.1),
+                          children: [
+                            TextSpan(
+                              text: "Let's ",
+                              style: TextStyle(
+                                fontSize: 31.sp,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF162544),
+                                letterSpacing: -0.3,
+                              ),
+                            ),
+                            TextSpan(
+                              text: 'book',
+                              style: TextStyle(
+                                fontSize: 31.sp,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.primary,
+                                letterSpacing: -0.3,
+                              ),
+                            ),
+                            TextSpan(
+                              text: ' your trip',
+                              style: TextStyle(
+                                fontSize: 31.sp,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF162544),
+                                letterSpacing: -0.3,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   );
                 },
               ),
@@ -498,9 +578,10 @@ class _HomePageState extends ConsumerState<HomePage> {
           controller: dropDateTimeController,
           readOnly: true,
           onTap: dropDateTime,
-          decoration: fieldDecoration(
-            'To Date & Time',
-          ).copyWith(suffixIcon: const Icon(Icons.calendar_month)),
+          decoration: fieldDecoration('To Date & Time').copyWith(
+            suffixIcon: const Icon(Icons.calendar_month),
+            errorText: dropDateTimeError,
+          ),
         ),
 
         SizedBox(height: 10.h),
@@ -582,4 +663,15 @@ class _HomePageState extends ConsumerState<HomePage> {
       ),
     );
   }
+}
+
+Widget _line() {
+  return Container(
+    width: 10.w,
+    height: 2.h,
+    decoration: BoxDecoration(
+      color: const Color(0xFFF39200),
+      borderRadius: BorderRadius.circular(10.r),
+    ),
+  );
 }
