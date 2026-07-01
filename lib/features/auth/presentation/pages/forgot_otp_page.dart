@@ -1,17 +1,61 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:voyzo/core/constants/app_colors.dart';
-import 'package:voyzo/shared/widgets/app_button.dart';
 
-class ForgotOtpPage extends StatelessWidget {
+class ForgotOtpPage extends StatefulWidget {
   const ForgotOtpPage({super.key});
+
+  @override
+  State<ForgotOtpPage> createState() => _ForgotOtpPageState();
+}
+
+class _ForgotOtpPageState extends State<ForgotOtpPage> {
+  String? _resendMessage;
+  bool _isResendDisabled = false;
+  int _resendSeconds = 0;
+  Timer? _resendTimer;
+
+  void _resendOtp() {
+    if (_isResendDisabled) return;
+
+    setState(() {
+      _isResendDisabled = true;
+      _resendSeconds = 30;
+      _resendMessage = 'OTP has been resent successfully.';
+    });
+
+    // TODO: Call resend OTP API here.
+
+    _resendTimer?.cancel();
+    _resendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_resendSeconds <= 1) {
+        timer.cancel();
+        setState(() {
+          _isResendDisabled = false;
+          _resendSeconds = 0;
+          _resendMessage = null;
+        });
+      } else {
+        setState(() {
+          _resendSeconds--;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _resendTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: true,
-
       body: SafeArea(
         child: SingleChildScrollView(
           child: ConstrainedBox(
@@ -40,11 +84,8 @@ class ForgotOtpPage extends StatelessWidget {
                     ),
                   ),
                   SizedBox(height: 25.h),
-
-                  Image.asset('assets/images/VOYZO_logo.png', width: 250),
-
+                  Image.asset('assets/images/VOYZO_logo.png', width: 250.w),
                   SizedBox(height: 25.h),
-
                   Text(
                     "Forgot Password",
                     style: TextStyle(
@@ -52,20 +93,16 @@ class ForgotOtpPage extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-
                   SizedBox(height: 20.h),
-
                   Text(
-                    "Code has been send to\n Mobile Number ",
+                    "Code has been sent to\nMobile Number",
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: AppColors.textHint,
                       fontSize: 16.sp,
                     ),
                   ),
-
                   SizedBox(height: 35.h),
-
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(6, (index) {
@@ -110,9 +147,7 @@ class ForgotOtpPage extends StatelessWidget {
                       );
                     }),
                   ),
-
                   SizedBox(height: 30.h),
-
                   SizedBox(
                     width: double.infinity,
                     height: 50.h,
@@ -120,37 +155,44 @@ class ForgotOtpPage extends StatelessWidget {
                       onPressed: () {
                         context.go('/set_new_password');
                       },
-                      child: Text("Submit"),
+                      child: const Text("Submit"),
                     ),
                   ),
-
                   SizedBox(height: 30.h),
-
-                  Column(
-                    children: [
-                      Text(
-                        "Didn't receive code?",
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-
-                      SizedBox(height: 4.h),
-
-                      GestureDetector(
-                        onTap: () {},
-                        child: Text(
-                          "Resend again",
-                          style: TextStyle(
-                            color: AppColors.primary,
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
+                  Text(
+                    "Didn't receive code?",
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
+                  SizedBox(height: 4.h),
+                  GestureDetector(
+                    onTap: _isResendDisabled ? null : _resendOtp,
+                    child: Text(
+                      _isResendDisabled
+                          ? "Resend in $_resendSeconds sec"
+                          : "Resend again",
+                      style: TextStyle(
+                        color: _isResendDisabled
+                            ? Colors.grey
+                            : AppColors.primary,
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  if (_resendMessage != null) ...[
+                    SizedBox(height: 8.h),
+                    Text(
+                      _resendMessage!,
+                      style: TextStyle(
+                        color: Colors.green,
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

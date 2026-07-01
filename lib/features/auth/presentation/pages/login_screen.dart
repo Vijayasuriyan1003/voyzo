@@ -4,12 +4,10 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:voyzo/features/auth/data/auth_api.dart';
 import 'package:voyzo/features/bookings/presentation/providers/driver_provider.dart';
+
 import '../../../../core/constants/app_colors.dart';
 import '../../../../shared/providers/auth_provider.dart';
 
-/// Figma "Driver Login" (node 350:1023) — a clean white screen with the
-/// "Driver Login" title, two rounded input fields (email id, Password) and an
-/// amber "Log In" button.
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -20,6 +18,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+
   bool _obscure = true;
   bool _isLoading = false;
 
@@ -64,11 +63,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     ref.read(driverProvider.notifier).setDriver(driverData);
     ref.read(isLoggedInProvider.notifier).state = true;
 
-    print('Driver Email: ${driverData['email']}');
-    print('Driver ID: ${driverData['driver_id']}');
-    print('Driver Name: ${driverData['full_name']}');
-    print('Driver Mobile: ${driverData['mobile_no']}');
-
     context.go('/booking-history');
   }
 
@@ -76,84 +70,108 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(horizontal: 24.w),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // SizedBox(height: 50.h),
-                Image.asset('assets/images/VOYZO_logo.png', width: 250),
+        child: SingleChildScrollView(
+          padding: EdgeInsets.symmetric(horizontal: 24.w),
+          child: Column(
+            children: [
+              SizedBox(height: 100.h),
 
-                SizedBox(height: 25.h),
-                Text(
-                  'Driver Login',
-                  style: TextStyle(
-                    fontSize: 22.sp,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textPrimary,
+              Image.asset('assets/images/VOYZO_logo.png', width: 250.w),
+
+              SizedBox(height: 25.h),
+
+              Text(
+                'Driver Login',
+                style: TextStyle(
+                  fontSize: 22.sp,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+
+              SizedBox(height: 45.h),
+
+              _Field(
+                controller: _emailController,
+                hint: 'email id',
+                icon: Icons.mail_outline_rounded,
+                keyboardType: TextInputType.emailAddress,
+              ),
+
+              SizedBox(height: 20.h),
+
+              _Field(
+                controller: _passwordController,
+                hint: 'Password',
+                icon: Icons.lock_outline_rounded,
+                obscure: _obscure,
+                suffix: IconButton(
+                  icon: Icon(
+                    _obscure
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    color: AppColors.labelGrey,
+                    size: 20.sp,
                   ),
+                  onPressed: () {
+                    setState(() {
+                      _obscure = !_obscure;
+                    });
+                  },
                 ),
-                SizedBox(height: 56.h),
-                _Field(
-                  controller: _emailController,
-                  hint: 'email id',
-                  icon: Icons.mail_outline_rounded,
-                  keyboardType: TextInputType.emailAddress,
-                ),
-                SizedBox(height: 18.h),
-                _Field(
-                  controller: _passwordController,
-                  hint: 'Password',
-                  icon: Icons.lock_outline_rounded,
-                  obscure: _obscure,
-                  suffix: IconButton(
-                    icon: Icon(
-                      _obscure
-                          ? Icons.visibility_off_outlined
-                          : Icons.visibility_outlined,
-                      color: AppColors.labelGrey,
-                      size: 20.sp,
+              ),
+
+              SizedBox(height: 35.h),
+
+              SizedBox(
+                width: double.infinity,
+                height: 52.h,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _login,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: const Color(0xFFF2F2F2),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(100.r),
                     ),
-                    onPressed: () => setState(() => _obscure = !_obscure),
                   ),
-                ),
-                SizedBox(height: 28.h),
-                SizedBox(
-                  width: double.infinity,
-                  height: 52.h,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _login,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: const Color(0xFFF2F2F2),
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(100.r),
-                      ),
-                    ),
-                    child: _isLoading
-                        ? SizedBox(
-                            width: 22.w,
-                            height: 22.h,
-                            child: const CircularProgressIndicator(
-                              strokeWidth: 2.5,
-                              color: Colors.white,
-                            ),
-                          )
-                        : Text(
-                            'Log In',
-                            style: TextStyle(
-                              fontSize: 18.sp,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFFF2F2F2),
-                            ),
+                  child: _isLoading
+                      ? SizedBox(
+                          width: 22.w,
+                          height: 22.h,
+                          child: const CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            color: Colors.white,
                           ),
-                  ),
+                        )
+                      : Text(
+                          'Log In',
+                          style: TextStyle(
+                            fontSize: 18.sp,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFFF2F2F2),
+                          ),
+                        ),
                 ),
-              ],
-            ),
+              ),
+
+              SizedBox(height: 220.h),
+
+              TextButton(
+                onPressed: () {
+                  context.push('/customer_login');
+                },
+                child: Text(
+                  'Customer Login',
+                  style: TextStyle(color: Colors.grey, fontSize: 15.sp),
+                ),
+              ),
+
+              SizedBox(height: 20.h),
+            ],
           ),
         ),
       ),
@@ -161,7 +179,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 }
 
-/// Rounded outlined field with a leading icon (Figma driver login).
 class _Field extends StatelessWidget {
   final TextEditingController controller;
   final String hint;
@@ -201,8 +218,10 @@ class _Field extends StatelessWidget {
     );
   }
 
-  OutlineInputBorder _border(Color c) => OutlineInputBorder(
-    borderRadius: BorderRadius.circular(100.r),
-    borderSide: BorderSide(color: c),
-  );
+  OutlineInputBorder _border(Color color) {
+    return OutlineInputBorder(
+      borderRadius: BorderRadius.circular(100.r),
+      borderSide: BorderSide(color: color),
+    );
+  }
 }

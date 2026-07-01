@@ -160,7 +160,7 @@ class _SetNewPasswordPageState extends State<SetNewPasswordPage> {
                             if (widget.isChangePassword) {
                               context.go('/customer_profile');
                             } else {
-                              context.go('/forget_password');
+                              context.go('/forgot_password');
                             }
                           },
                           icon: Icon(

@@ -16,6 +16,7 @@ class CustomerLoginPage extends ConsumerStatefulWidget {
 
 class _CustomerLoginPageState extends ConsumerState<CustomerLoginPage> {
   bool isPasswordVisible = false;
+  bool isLoading = false;
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -30,6 +31,11 @@ class _CustomerLoginPageState extends ConsumerState<CustomerLoginPage> {
   final authApi = AuthApi();
   Future<void> submitLogin() async {
     if (!_formKey.currentState!.validate()) return;
+    if (isLoading) return;
+
+    setState(() {
+      isLoading = true;
+    });
 
     try {
       final userData = await authApi.login(
@@ -37,6 +43,10 @@ class _CustomerLoginPageState extends ConsumerState<CustomerLoginPage> {
         password: _passwordController.text.trim(),
       );
       if (!mounted) return;
+
+      setState(() {
+        isLoading = false;
+      });
 
       if (userData != null) {
         ref.read(userProvider.notifier).state = UserState(
@@ -194,20 +204,29 @@ class _CustomerLoginPageState extends ConsumerState<CustomerLoginPage> {
                             width: double.infinity,
                             height: 48.h,
                             child: ElevatedButton(
+                              onPressed: isLoading ? null : submitLogin,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.primary,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(30),
                                 ),
                               ),
-                              onPressed: submitLogin,
-                              child: Text(
-                                "Log In",
-                                style: TextStyle(
-                                  fontSize: 20.sp,
-                                  color: Colors.white,
-                                ),
-                              ),
+                              child: isLoading
+                                  ? SizedBox(
+                                      width: 22.w,
+                                      height: 22.w,
+                                      child: const CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : Text(
+                                      "Log In",
+                                      style: TextStyle(
+                                        fontSize: 20.sp,
+                                        color: Colors.white,
+                                      ),
+                                    ),
                             ),
                           ),
 

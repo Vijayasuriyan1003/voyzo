@@ -15,6 +15,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final _formKey = GlobalKey<FormState>();
   final _controller = TextEditingController();
   final authApi = AuthApi();
+  String? _successMessage;
 
   @override
   void dispose() {
@@ -43,11 +44,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
     if (success) {
       if (isEmail) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Password reset link sent to your email'),
-          ),
-        );
+        setState(() {
+          _successMessage = 'Password reset link has been sent to your email.';
+        });
       } else {
         ScaffoldMessenger.of(
           context,
@@ -136,7 +135,21 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                             return null;
                           },
                         ),
-                        SizedBox(height: 30.h),
+                        if (_successMessage != null) ...[
+                          SizedBox(height: 8.h),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              _successMessage!,
+                              style: TextStyle(
+                                color: Colors.green,
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                        SizedBox(height: 25.h),
                         SizedBox(
                           width: double.infinity,
                           height: 50.h,
