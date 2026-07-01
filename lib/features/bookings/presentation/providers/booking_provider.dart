@@ -25,6 +25,10 @@ class BookingState {
         return bookings
             .where((b) => b.status == BookingStatus.completed)
             .toList();
+      case 'cancelled':
+        return bookings
+            .where((b) => b.status == BookingStatus.cancelled)
+            .toList();
       default:
         return bookings;
     }
